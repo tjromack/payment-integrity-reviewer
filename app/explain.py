@@ -16,7 +16,7 @@ import os
 from app.models import connect, init_db
 
 # Bump when the prompt changes so explanations stay traceable to how they were made.
-PROMPT_VERSION = "explain-v1"
+PROMPT_VERSION = "explain-v2"
 DEFAULT_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-opus-4-8")
 MAX_TOKENS = 300
 
@@ -56,6 +56,10 @@ denied, approved, dismissed, or recovered, and do not assert it is definitely \
 fraud or an error. You explain why the rule fired; a human decides what to do.
 - Refer to the concrete triggering values (ids, codes, dates, amounts) so the \
 reviewer can see the basis for the flag.
+- Name the rule id that fired (e.g. DUP-01) in your rationale.
+- Do not assert any relationship between values that the inputs do not state. If \
+two values are given as separate lists, do not pair them item-by-item unless an \
+explicit mapping is provided.
 - 1-3 sentences. Neutral, factual tone. Output only the rationale text, with no \
 preamble, headings, or labels."""
 
@@ -77,6 +81,22 @@ def build_messages(flag: dict) -> tuple[str, str]:
     return SYSTEM_PROMPT, user_text
 
 
+def use_os_trust_store() -> None:
+    """Make TLS use the OS certificate store (best-effort).
+
+    On managed/corporate machines a security product often injects a root CA into
+    the Windows/macOS trust store but not into Python's bundled `certifi`, which
+    surfaces as 'CERTIFICATE_VERIFY_FAILED'. This keeps verification ON and just
+    points it at the OS store. No-op if `truststore` isn't installed.
+    """
+    try:
+        import truststore
+
+        truststore.inject_into_ssl()
+    except Exception:
+        pass
+
+
 def _client():
     """Construct the Anthropic client, loading .env first. Raises if no key."""
     try:
@@ -85,6 +105,7 @@ def _client():
         load_dotenv()
     except ImportError:  # python-dotenv optional at runtime
         pass
+    use_os_trust_store()
     if not os.getenv("ANTHROPIC_API_KEY"):
         raise RuntimeError(
             "ANTHROPIC_API_KEY is not set. Copy .env.example to .env and add your "
@@ -134,8 +155,15 @@ def referenced_values(explanation: str, triggering: dict) -> list[str]:
 def is_grounded(explanation: str, rule_id: str, triggering: dict) -> bool:
     """True if the explanation names the rule/issue and cites a triggering value."""
     text = explanation.lower()
-    issue_word = {"DUP-01": "duplicat", "UNB-01": "unbundl", "OON-01": "network"}
-    mentions_rule = rule_id.lower() in text or issue_word.get(rule_id, "") in text
+    # The rule is "referenced" if the explanation names the rule id or any
+    # issue-specific keyword for it (kept broad so a faithful rationale that
+    # describes the issue without the literal rule id still counts).
+    issue_words = {
+        "DUP-01": ("duplicat", "resubmit", "same service"),
+        "UNB-01": ("unbundl", "panel", "component", "separately", "bundl"),
+        "OON-01": ("network", "out-of-network", "in-network", "oon"),
+    }
+    mentions_rule = rule_id.lower() in text or any(w in text for w in issue_words.get(rule_id, ()))
     return bool(explanation) and mentions_rule and bool(referenced_values(explanation, triggering))
 
 

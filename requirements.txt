@@ -9,6 +9,7 @@ python-dotenv>=1.0
 
 # LLM explanation layer (explanations only — never detection)
 anthropic>=0.40
+truststore>=0.9        # use the OS trust store for TLS (corporate-CA friendly)
 
 # Tests / formatting
 pytest>=8.0

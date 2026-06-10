@@ -237,6 +237,7 @@ For *why* each design choice was made (including why the LLM doesn't detect), re
 | `Skipped: ANTHROPIC_API_KEY is not set` | Add your key to `.env` (see §5). Detection still works without it. |
 | Port 8000 in use | `python -m uvicorn app.main:app --reload --port 8001` |
 | `wrong python` after activating venv | Re-open the terminal and re-activate, or use `PY=.venv/Scripts/python`. |
+| `make explain` fails with `CERTIFICATE_VERIFY_FAILED` | A corporate/AV root CA isn't in Python's bundle. The app already uses `truststore` (the OS trust store) automatically; if it persists, ensure `pip install truststore` ran and the CA is in your OS store. |
 
 ---
 

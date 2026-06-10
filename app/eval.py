@@ -149,6 +149,7 @@ def _maybe_client():
         load_dotenv()
     except ImportError:
         pass
+    explain.use_os_trust_store()
     if not os.getenv("ANTHROPIC_API_KEY"):
         return None
     import anthropic

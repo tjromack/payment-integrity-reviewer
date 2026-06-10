@@ -99,6 +99,8 @@ def test_invented_reason_without_rule_or_fields_fails_the_check():
 
 
 def test_explain_all_raises_clearly_without_api_key(monkeypatch):
+    # Neutralize .env loading so a local .env with a key doesn't mask the test.
+    monkeypatch.setattr("dotenv.load_dotenv", lambda *a, **k: None)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     # _client() should refuse rather than make a doomed call.
     with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"):

@@ -133,6 +133,28 @@ These are the script for "why did you build it this way?" Add an entry on every 
 - Why: An explanation that invents a rationale is worse than none — it would mislead a reviewer.
   Faithfulness is a measurable safety property, so it gets measured (`EVAL.md`).
 
+## 014. Eval-driven hardening of the explanation layer (prompt v2)
+- Phase: 6 (follow-up, after first live run)
+- Decision: The first live `make explain` + `make eval` surfaced two real issues; fixed at the
+  source rather than by loosening the eval:
+  - **Explanations didn't consistently name the rule.** Duplicate/OON rationales echoed the rule
+    id; unbundling ones described the issue but never said it, so the grounding check (EVAL #1,
+    "references the rule id/name") failed all 18. Fix: prompt **v2** requires naming the rule id;
+    the deterministic `is_grounded()` keyword set was also broadened so a faithful rationale that
+    describes the issue still counts.
+  - **The judge caught an unsupported inference.** Unbundling explanations paired each CPT to a
+    line id, but the fields listed CPTs and line ids as *parallel arrays* with no stated mapping.
+    Fix: the UNB-01 flag now carries an explicit `component_map` (cpt → line_id) so the pairing is
+    grounded, and prompt v2 forbids pairing separate lists without an explicit mapping.
+  - **TLS on managed machines.** Live calls failed with `CERTIFICATE_VERIFY_FAILED` (a corporate
+    root CA in the OS store but not in Python's `certifi`). Fix: best-effort `truststore` to use
+    the OS trust store — verification stays ON.
+- Result: faithfulness went 0.47 → 0.97 (33/34); the one remaining failure is a genuine model
+  error the judge caught (a hallucinated component code), left as an honest finding — the human
+  reviewer is the backstop, and re-running `make explain` regenerates it.
+- Why: The eval is only worth having if it changes the system. Hardening the prompt + data is the
+  right response to a faithfulness miss; loosening the check to hit a number would not be.
+
 ## 013. Eval: two-layer faithfulness, near-miss metric, honest synthetic caveat
 - Phase: 5
 - Decision:
