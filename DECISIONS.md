@@ -133,6 +133,26 @@ These are the script for "why did you build it this way?" Add an entry on every 
 - Why: An explanation that invents a rationale is worse than none — it would mislead a reviewer.
   Faithfulness is a measurable safety property, so it gets measured (`EVAL.md`).
 
+## 013. Eval: two-layer faithfulness, near-miss metric, honest synthetic caveat
+- Phase: 5
+- Decision:
+  - **Detection** metrics (precision/recall/F1 overall + per issue type, plus FP/FN line ids)
+    are computed purely from the ground-truth labels, no LLM. A "near-misses correctly not
+    flagged" count is reported so a 1.0 precision is visibly *earned* against issue-like-but-
+    legitimate claims, not trivial.
+  - **Faithfulness** is two layers: a deterministic `is_grounded()` check (names the rule/issue
+    and cites a real triggering value) AND an LLM-as-judge for "no invented reasons" using the
+    versioned rubric from `EVAL.md` (`faithful-judge-v1`), via structured JSON output. An
+    explanation counts faithful only if both pass. The judge model + rubric version are recorded.
+  - Faithfulness degrades gracefully: deterministic-only when no API key, and `n/a` when no
+    explanations have been generated yet — `make eval` never hard-fails for lack of a key.
+- Alternatives considered: LLM-judge only (no cheap deterministic guard, and unverifiable);
+  deterministic only (can't catch a fluent invented reason that still cites the right fields).
+- Why: The two layers are complementary — the deterministic check guarantees the rule + fields
+  are referenced; the judge catches fabricated rationale that the keyword check would miss.
+  Stating the near-miss count and the synthetic-data caveat keeps the perfect scores honest.
+- Revisit if: Real data arrives → recall stops being ~1.0 and the thresholds become load-bearing.
+
 ## 012. Reviewer UI hides ground truth; decisions are append-only (latest wins)
 - Phase: 4
 - Decision:
