@@ -4,6 +4,13 @@
 <h2 style="margin-top:0">Review queue <span class="muted" style="font-size:14px">({{ items|length }} flags)</span></h2>
 <p class="muted">Pending flags first. Open one to see the rule, the triggering fields, and the explanation.</p>
 
+{% if not items %}
+<div class="card">
+  <p style="margin:0">No flags to review yet.</p>
+  <p class="muted" style="margin-bottom:0">Generate some with <code>make reset</code> (seed + detect),
+    then refresh this page.</p>
+</div>
+{% else %}
 <div class="card" style="padding:0">
   <table>
     <thead>
@@ -24,4 +31,5 @@
     </tbody>
   </table>
 </div>
+{% endif %}
 {% endblock %}

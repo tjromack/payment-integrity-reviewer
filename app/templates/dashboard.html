@@ -4,6 +4,14 @@
 <h2 style="margin-top:0">Dashboard</h2>
 <p class="muted">All claims are synthetic with ground-truth labels — no PHI.</p>
 
+{% if volume.flags == 0 %}
+<div class="card">
+  <p style="margin:0">No data yet.</p>
+  <p class="muted" style="margin-bottom:0">Run <code>make reset</code> (seed + detect) to populate
+    flags, then refresh.</p>
+</div>
+{% endif %}
+
 <div class="grid">
   <div class="stat"><div class="n">{{ volume.flags }}</div><div class="l">Flags raised</div></div>
   <div class="stat"><div class="n">{{ volume.claims_flagged }}</div><div class="l">Claim lines flagged</div></div>

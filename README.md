@@ -121,4 +121,7 @@ DECISIONS.md  DEMO.md  EVAL.md  TODO.md  CLAUDE.md
 
 ## Status
 
-In development. See `TODO.md` for the phased plan.
+All phases complete (scaffold → labeled seed → rules engine → explanation layer → queue +
+dashboard → eval → polish). `make reset && make run` gives a full demo on seeded, detected data;
+`make eval` prints the metrics. New here? Start with `USER_GUIDE.md`. See `TODO.md` for the
+phased plan and `DEMO.md` for the walkthrough.

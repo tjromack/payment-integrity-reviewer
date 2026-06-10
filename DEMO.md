@@ -7,10 +7,13 @@ it cold.
 ## Before the demo
 ```bash
 make reset      # wipe, re-seed labeled synthetic claims, re-run detection
+make explain    # optional: generate the LLM rationales (needs ANTHROPIC_API_KEY in .env)
 make run        # start server
 make eval       # optional: have a fresh eval report ready to show
 # open http://localhost:8000  (dashboard)
 ```
+> Detection and the dashboard work with no API key. `make explain` is the only step that
+> calls the LLM; without it, each flag's explanation panel shows a "run `make explain`" note.
 
 ## The ~90-second happy path
 
@@ -25,17 +28,22 @@ make eval       # optional: have a fresh eval report ready to show
    → Proves: the key design decision (transparent detection).
 
 3. **Read the plain-English explanation.** *"The LLM's only job is to turn that trigger into a
-   readable rationale for the reviewer. It explains — it never decides what gets flagged."*
+   readable rationale for the reviewer, grounded in the rule and fields — and we record the model
+   and prompt version. It explains — it never decides what gets flagged."*
    → Proves: AI used where it's strong, not as the unaccountable decision-maker.
 
-4. **Dismiss a false positive** (a near-miss claim). *"A human makes the call, and the decision
-   is stored as a label — which is how you'd improve detection over time."*
+4. **Make the call** — approve a clear duplicate, then dismiss or escalate another flag.
+   *"A human decides; every decision is stored as a label — that's the feedback loop you'd train
+   on later."* Go back to the dashboard: the approved flag now shows under **Confirmed** dollars;
+   dismissed/escalated ones drop out of that figure.
    → Proves: human-in-the-loop + feedback loop. Watch the dashboard update.
+   *(Note: there's nothing to "dismiss as a false positive" — the look-alike near-miss claims were
+   never flagged in the first place. That's the precision story, and the eval shows it.)*
 
-5. **Run the eval** (`make eval`). *"And I measure it: detector precision/recall by issue type
-   against the ground-truth labels, plus a faithfulness check that the explanations don't invent
-   reasons."*
-   → Proves: measurement beyond demos; calibrated honesty about recall.
+5. **Run the eval** (`make eval`). *"And I measure it: detector precision/recall/F1 by issue type
+   against the ground-truth labels — including how many issue-like near-misses it correctly left
+   alone — plus a faithfulness check that the explanations don't invent reasons."*
+   → Proves: measurement beyond demos; calibrated honesty about recall and precision.
 
 ## The one-liner to anchor on
 *"Rules detect, AI explains, a human decides — and I can prove each part works."*

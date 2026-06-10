@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app import dashboard
-from app.models import connect
+from app.models import connect, init_db
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -20,6 +20,14 @@ app = FastAPI(title="Payment-Integrity Claims Reviewer")
 
 TITLE = "Payment-Integrity Claims Reviewer"
 TAGLINE = "Rules detect · AI explains · a human decides"
+
+
+def _conn():
+    """Connection with the schema ensured, so a fresh DB renders empty states
+    instead of a 500 ('no such table') before `make seed` has ever run."""
+    conn = connect()
+    init_db(conn)
+    return conn
 
 
 def _ctx(request: Request, **extra) -> dict:
@@ -33,7 +41,7 @@ def health() -> JSONResponse:
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request) -> HTMLResponse:
-    conn = connect()
+    conn = _conn()
     summary = dashboard.summary(conn)
     conn.close()
     return templates.TemplateResponse(request, "dashboard.html", _ctx(request, **summary))
@@ -41,7 +49,7 @@ def index(request: Request) -> HTMLResponse:
 
 @app.get("/queue", response_class=HTMLResponse)
 def queue(request: Request) -> HTMLResponse:
-    conn = connect()
+    conn = _conn()
     items = dashboard.review_items(conn)
     conn.close()
     return templates.TemplateResponse(request, "queue.html", _ctx(request, items=items))
@@ -49,7 +57,7 @@ def queue(request: Request) -> HTMLResponse:
 
 @app.get("/flag/{flag_id}", response_class=HTMLResponse)
 def flag_detail(request: Request, flag_id: int):
-    conn = connect()
+    conn = _conn()
     detail = dashboard.flag_detail(conn, flag_id)
     conn.close()
     if detail is None:
@@ -64,7 +72,7 @@ def decide(
     reviewer: str = Form("reviewer"),
     note: str = Form(""),
 ):
-    conn = connect()
+    conn = _conn()
     detail = dashboard.flag_detail(conn, flag_id)
     if detail is None:
         conn.close()

@@ -150,8 +150,14 @@ def _save(conn, flag_id: int, result: dict) -> None:
     )
 
 
-def explain_all(only_missing: bool = True, limit: int | None = None) -> dict[str, int]:
-    """Generate and persist explanations for flags. Idempotent on missing ones."""
+def explain_all(only_missing: bool = True, limit: int | None = None) -> dict:
+    """Generate and persist explanations for flags. Idempotent on missing ones.
+
+    Resilient: a per-flag API error is recorded and the batch continues; an auth
+    error aborts early (every call would fail the same way).
+    """
+    import anthropic
+
     conn = connect()
     init_db(conn)
     where = "WHERE explanation IS NULL" if only_missing else ""
@@ -161,13 +167,21 @@ def explain_all(only_missing: bool = True, limit: int | None = None) -> dict[str
 
     client = _client()
     done = 0
+    failed: list[tuple[int, str]] = []
     for flag in rows:
-        result = explain_flag(flag, client=client)
+        try:
+            result = explain_flag(flag, client=client)
+        except anthropic.AuthenticationError:
+            conn.close()
+            raise RuntimeError("Authentication failed — check ANTHROPIC_API_KEY in .env.")
+        except anthropic.APIError as e:  # rate limit, overloaded, transient server, etc.
+            failed.append((flag["id"], type(e).__name__))
+            continue
         _save(conn, flag["id"], result)
         conn.commit()
         done += 1
     conn.close()
-    return {"explained": done, "considered": len(rows)}
+    return {"explained": done, "considered": len(rows), "failed": failed}
 
 
 def main() -> None:
@@ -176,7 +190,13 @@ def main() -> None:
     except RuntimeError as e:
         print(f"Skipped: {e}")
         return
-    print(f"Explained {counts['explained']} flag(s) ({DEFAULT_MODEL}, prompt {PROMPT_VERSION}).")
+    if counts["considered"] == 0:
+        print("No flags need explanations. Run `make detect` first, or all are done.")
+        return
+    print(f"Explained {counts['explained']}/{counts['considered']} flag(s) "
+          f"({DEFAULT_MODEL}, prompt {PROMPT_VERSION}).")
+    for flag_id, err in counts["failed"]:
+        print(f"  flag {flag_id} failed: {err} (re-run `make explain` to retry)")
 
 
 if __name__ == "__main__":
