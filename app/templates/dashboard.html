@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 style="margin-top:0">Dashboard</h2>
+<p class="muted">All claims are synthetic with ground-truth labels — no PHI.</p>
+
+<div class="grid">
+  <div class="stat"><div class="n">{{ volume.flags }}</div><div class="l">Flags raised</div></div>
+  <div class="stat"><div class="n">{{ volume.claims_flagged }}</div><div class="l">Claim lines flagged</div></div>
+  <div class="stat"><div class="n">{{ outcomes.pending }}</div><div class="l">Pending review</div></div>
+  <div class="stat"><div class="n">{{ outcomes.approve }}</div><div class="l">Approved</div></div>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <h2 style="margin-top:0">Estimated dollars identified
+    <span class="est">ESTIMATE — not recovered dollars</span></h2>
+  <div class="grid">
+    <div class="stat">
+      <div class="n">${{ '{:,.2f}'.format(identified.total) }}</div>
+      <div class="l">Identified across all flagged claims</div>
+    </div>
+    <div class="stat">
+      <div class="n">${{ '{:,.2f}'.format(confirmed.total) }}</div>
+      <div class="l">Confirmed — reviewer-approved flags only</div>
+    </div>
+  </div>
+
+  <table style="margin-top:14px">
+    <thead><tr><th>Issue</th><th>Identified</th><th>Confirmed</th><th>Assumption</th></tr></thead>
+    <tbody>
+    {% for issue in ['duplicate','unbundling','oon_mismatch'] %}
+      <tr>
+        <td>{{ issue.replace('_',' ') }}</td>
+        <td>${{ '{:,.2f}'.format(identified.by_issue[issue]) }}</td>
+        <td>${{ '{:,.2f}'.format(confirmed.by_issue[issue]) }}</td>
+        <td class="muted">{{ assumptions[issue] }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted" style="font-size:13px;margin-bottom:0">
+    Method and assumptions: <code>data/roi_assumptions.md</code>. This is dollars identified
+    for review, not validated recovery.
+  </p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Reviewer outcomes</h2>
+  <p>
+    <span class="badge pending">pending {{ outcomes.pending }}</span>
+    <span class="badge approve">approved {{ outcomes.approve }}</span>
+    <span class="badge dismiss">dismissed {{ outcomes.dismiss }}</span>
+    <span class="badge escalate">escalated {{ outcomes.escalate }}</span>
+  </p>
+  <p class="muted" style="margin-bottom:0">→ <a href="/queue">Open the review queue</a></p>
+</div>
+{% endblock %}

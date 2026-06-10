@@ -9,21 +9,53 @@
     * { box-sizing: border-box; }
     body { margin: 0; font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
            color: #1a2330; background: #f7f9fc; }
-    header { background: #fff; border-bottom: 1px solid #e3e8ef; padding: 16px 28px; }
-    header h1 { margin: 0; font-size: 18px; }
-    header .tag { color: #5b6b80; font-size: 13px; margin-top: 2px; }
-    main { max-width: 980px; margin: 0 auto; padding: 28px; }
-    .card { background: #fff; border: 1px solid #e3e8ef; border-radius: 10px; padding: 20px 22px; }
+    header { background: #fff; border-bottom: 1px solid #e3e8ef; padding: 14px 28px;
+             display: flex; align-items: baseline; gap: 20px; }
+    header h1 { margin: 0; font-size: 17px; }
+    header .tag { color: #5b6b80; font-size: 13px; }
+    header nav { margin-left: auto; display: flex; gap: 16px; }
+    header nav a { color: #1f6feb; text-decoration: none; font-size: 14px; }
+    main { max-width: 1000px; margin: 0 auto; padding: 24px 28px; }
+    h2 { font-size: 18px; }
+    .card { background: #fff; border: 1px solid #e3e8ef; border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+    .stat { background: #fff; border: 1px solid #e3e8ef; border-radius: 10px; padding: 16px 18px; }
+    .stat .n { font-size: 26px; font-weight: 600; }
+    .stat .l { color: #5b6b80; font-size: 13px; margin-top: 2px; }
     .muted { color: #5b6b80; }
     a { color: #1f6feb; }
     code { background: #eef2f7; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+    pre { background: #f1f4f9; border: 1px solid #e3e8ef; border-radius: 8px; padding: 12px;
+          overflow-x: auto; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid #eef1f6; font-size: 14px; }
+    th { color: #5b6b80; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+    .badge { display: inline-block; padding: 1px 9px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .badge.pending  { background: #fff4e0; color: #8a5a00; }
+    .badge.approve  { background: #e3f5e8; color: #1a7a3a; }
+    .badge.dismiss  { background: #eef1f6; color: #5b6b80; }
+    .badge.escalate { background: #fde8ec; color: #a3203b; }
+    .est { background: #eef4ff; border: 1px solid #cfe0ff; border-radius: 8px; padding: 4px 9px;
+           font-size: 12px; color: #1f4fa3; display: inline-block; }
+    .btn { font: inherit; padding: 8px 14px; border-radius: 7px; border: 1px solid #cfd6e0;
+           background: #fff; cursor: pointer; }
+    .btn.approve  { background: #1a7a3a; color: #fff; border-color: #1a7a3a; }
+    .btn.dismiss  { background: #fff; color: #5b6b80; }
+    .btn.escalate { background: #a3203b; color: #fff; border-color: #a3203b; }
+    dl.fields { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; }
+    dl.fields dt { color: #5b6b80; font-size: 13px; }
+    dl.fields dd { margin: 0; font-size: 14px; }
   </style>
   {% block head %}{% endblock %}
 </head>
 <body>
   <header>
     <h1>{{ title }}</h1>
-    <div class="tag">{{ tagline }}</div>
+    <span class="tag">{{ tagline }}</span>
+    <nav>
+      <a href="/">Dashboard</a>
+      <a href="/queue">Review queue</a>
+    </nav>
   </header>
   <main>
     {% block content %}{% endblock %}

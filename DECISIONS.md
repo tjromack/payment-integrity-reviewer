@@ -133,6 +133,27 @@ These are the script for "why did you build it this way?" Add an entry on every 
 - Why: An explanation that invents a rationale is worse than none — it would mislead a reviewer.
   Faithfulness is a measurable safety property, so it gets measured (`EVAL.md`).
 
+## 012. Reviewer UI hides ground truth; decisions are append-only (latest wins)
+- Phase: 4
+- Decision:
+  - The flag-detail view shows the claim fields, the triggering rule/fields, and the LLM
+    explanation, but **never the ground-truth `label` / `is_near_miss`** — those exist only for
+    the eval. A reviewer who could see the answer key wouldn't be a real human-in-the-loop.
+  - Each approve/dismiss/escalate is **inserted** as a new `decision` row; the current status is
+    the latest decision (by id). Decisions are an append-only audit trail, not an in-place update.
+  - The estimated-savings math lives only in `app/roi.py`; the dashboard surfaces those same
+    assumptions, and shows **Identified (all flagged)** vs **Confirmed (approved only)** with an
+    explicit "ESTIMATE — not recovered dollars" badge.
+  - After a decision the app redirects (303) to the queue so the reviewer flows to the next
+    flag; the dashboard recomputes on next load.
+- Alternatives considered: updating a single decision per flag in place (loses the audit trail);
+  duplicating ROI constants in the template (drifts from the documented method); showing the
+  label to help reviewers (defeats the point of human review).
+- Why: Keeps the human accountable for the call on the same evidence a real reviewer would have,
+  preserves a labeled decision history for a future feedback loop, and keeps the dollar figure
+  honest and single-sourced.
+- Revisit if: Multi-reviewer roles/permissions or SLA queueing are added (Path to Production).
+
 ## 011. Explanation layer: model, parameters, and how it's invoked
 - Phase: 3
 - Decision:

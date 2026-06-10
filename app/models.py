@@ -68,9 +68,13 @@ CREATE TABLE IF NOT EXISTS decision (
 """
 
 
-def connect(db_path: Path | str = DB_PATH) -> sqlite3.Connection:
-    """Open a connection with row access by column name and FKs enforced."""
-    path = Path(db_path)
+def connect(db_path: Path | str | None = None) -> sqlite3.Connection:
+    """Open a connection with row access by column name and FKs enforced.
+
+    Resolves `DB_PATH` at call time (not as a default arg) so tests can point the
+    whole app at a temp database by patching `models.DB_PATH`.
+    """
+    path = Path(db_path) if db_path is not None else DB_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row

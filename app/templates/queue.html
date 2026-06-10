@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 style="margin-top:0">Review queue <span class="muted" style="font-size:14px">({{ items|length }} flags)</span></h2>
+<p class="muted">Pending flags first. Open one to see the rule, the triggering fields, and the explanation.</p>
+
+<div class="card" style="padding:0">
+  <table>
+    <thead>
+      <tr><th>Status</th><th>Issue</th><th>Claim line</th><th>CPT</th><th>Allowed</th><th>Confidence</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for it in items %}
+      <tr>
+        <td><span class="badge {{ it.status }}">{{ it.status }}</span></td>
+        <td>{{ it.issue.replace('_',' ') }}</td>
+        <td><code>{{ it.flag.claim_line_id }}</code></td>
+        <td>{{ it.claim.cpt_code }}</td>
+        <td>${{ '{:,.2f}'.format(it.claim.allowed_amount or 0) }}</td>
+        <td>{{ (it.flag.confidence * 100)|round|int }}%</td>
+        <td><a href="/flag/{{ it.flag.id }}">Review →</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
