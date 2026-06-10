@@ -45,6 +45,41 @@ These are the script for "why did you build it this way?" Add an entry on every 
 - Why: Confidence must be reproducible and defensible. An LLM-produced number would be
   arbitrary and uncalibrated.
 
+## 009. Rules-engine design: grouping keys, modifier handling, confidence values
+- Phase: 2
+- Decision:
+  - **Grouping.** Duplicate groups on `(member, provider, CPT, date_of_service)`; unbundling
+    groups on `(member, provider, date_of_service)` then checks the CPT set against the panel
+    reference. Both group on member+provider+date rather than `claim_id` so the rules also
+    catch issues split across separate claims, not just within one claim.
+  - **Near-miss handling = the distinct-service modifier.** A duplicate is skipped if the later
+    line carries a modifier in `DISTINCT_SERVICE_MODIFIERS` (59/76/77/91/RT/LT). Unbundling is
+    skipped only if *every* component line carries such a modifier (the provider asserted the
+    services were distinct). OON is skipped when `auth_or_emergency` is set.
+  - **Confidence (rule-derived constants).** DUP-01 = 0.95 when the redundant line matches the
+    original on allowed_amount and units, else 0.85; UNB-01 = 0.90 (requires a complete panel);
+    OON-01 = 0.92 (a deterministic adjudication discrepancy).
+- Alternatives considered: grouping unbundling by `claim_id` (misses cross-claim splitting);
+  a learned/score-based confidence (not reproducible, fails Decision 003).
+- Why: The keys and modifier rules mirror how real edits reason and keep every flag traceable
+  to concrete fields. Fixed confidence tiers are simple, defensible, and reproducible.
+- Tradeoff accepted: On the synthetic seed the rules score precision/recall = 1.0 because the
+  seed is rule-aligned by construction; the near-misses (issue-like but legitimate) are what
+  actually exercise precision. Real-world performance would differ — stated in `EVAL.md`.
+- Revisit if: New issue variants appear → add rules/keys; if confidence needs calibration →
+  derive tiers from accumulated reviewer outcomes (still rule-anchored, never LLM-set).
+
+## 010. Optional secondary statistical score is deferred (kept out of detection)
+- Phase: 2
+- Decision: Ship detection as purely rule-based for now; do not add the optional
+  statistical/anomaly score (and keep `scikit-learn` out of `requirements.txt`).
+- Alternatives considered: A z-score on billed amount per CPT as a secondary signal now.
+- Why: Minimal dependencies (guardrail 6) and a clean "transparent rules detect" story for the
+  demo. A secondary signal only earns its place as a *clearly separate, monitored, explainable*
+  input (see README → Path to Production), not bolted on for its own sake.
+- Revisit if: Rules miss novel patterns → add it as a labeled secondary signal with its own
+  explainability, never as an opaque override of the rules.
+
 ## 004. Human-in-the-loop is the decision point; decisions are stored as labels
 - Phase: 4
 - Decision: Reviewers approve / dismiss / escalate; every decision persists as labeled data.

@@ -25,9 +25,10 @@ eval:           ## detector P/R/F1 by issue type + explanation faithfulness
 test:           ## run the test suite
 	$(PY) -m pytest
 
-reset:          ## wipe DB + re-seed (re-detect is appended in Phase 2)
+reset:          ## wipe DB, re-seed, re-detect — clean, repeatable demo state
 	$(PY) -c "import os,glob;[os.remove(f) for f in glob.glob('data/*.db')]"
 	$(PY) -m app.seed
+	$(PY) -m app.detect
 
 fmt:            ## format code
 	$(PY) -m black app
