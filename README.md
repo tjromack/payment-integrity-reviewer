@@ -4,8 +4,8 @@ A claims-review workflow that **detects** likely payment-integrity issues on syn
 with **transparent rules**, **explains** each flag in plain English with an LLM, and routes them
 through a **human approval queue** — with a running tally of estimated dollars identified.
 
-> Built against the Claritev problem space using **synthetic claims only — no PHI, no internal
-> systems**. This is a personal portfolio prototype. The savings figure is an explicit
+> Built in the payment-integrity problem space using **synthetic claims only — no PHI, no
+> internal systems**. This is a personal portfolio prototype. The savings figure is an explicit
 > *estimate* with stated assumptions, not a financial claim.
 
 ---
@@ -37,13 +37,12 @@ Payment-integrity / claims-review analysts and the leaders who need to see throu
 - **Dashboard:** flagged volume, reviewer outcomes (approved / dismissed / escalated), and
   **estimated dollars identified** (clearly labeled as an estimate).
 
-## Why it maps to the role
+## Why this design
 
-The posting names automation, decision-support, human-in-the-loop experiences, tracking
-cost-savings impact, responsible AI, and payment integrity specifically. The defining design
-choice here — keeping *detection* transparent and auditable while using AI only for
-*explanation* — is exactly the "where AI should and should not be used" judgment the role
-screens for, applied to a regulated, high-stakes workflow.
+It brings together automation, decision support, a human-in-the-loop experience, cost-savings
+tracking, and responsible AI in a payment-integrity workflow. The defining design choice —
+keeping *detection* transparent and auditable while using AI only for *explanation* — is the
+"where AI should and should not be used" judgment applied to a regulated, high-stakes workflow.
 
 ## Tech stack
 

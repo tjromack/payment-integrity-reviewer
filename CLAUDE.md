@@ -6,8 +6,8 @@ Working agreement for building this project with Claude Code. Read it before eac
 
 Build the **Payment-Integrity Claims Reviewer**: a FastAPI app that flags likely
 payment-integrity issues on synthetic claims with transparent rules, explains each flag with an
-LLM, and routes them through a human review queue with an estimated-savings dashboard. An
-interview-demo prototype that must run reliably and be auditable.
+LLM, and routes them through a human review queue with an estimated-savings dashboard. A
+demo prototype that must run reliably and be auditable.
 
 ## Operating principles (guardrails)
 
@@ -52,8 +52,8 @@ make fmt       # format
 - Small, single-purpose modules (see README structure).
 - Each flag persists: rule id, triggering fields, confidence, and (later) the LLM explanation.
 - No secrets in code; read from `.env`.
-- **Commit at each phase boundary** with a readable message; the git history is an interview
-  artifact.
+- **Commit at each phase boundary** with a readable message; the git history is a readable
+  record of decisions.
 - Update `DECISIONS.md` on every non-trivial choice (a rule's logic, the rules-vs-LLM split,
   confidence scoring, the ROI method) with the rejected alternative and the why.
 

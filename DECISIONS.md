@@ -122,9 +122,9 @@ These are the script for "why did you build it this way?" Add an entry on every 
 - Decision: Compute "estimated dollars identified" from assumptions in
   `data/roi_assumptions.md`; always label it an estimate.
 - Alternatives considered: Showing a single headline savings figure.
-- Why: Overstating ROI is both dishonest and easy to puncture in an interview. Showing the
-  method and assumptions is more credible than a big number, and demonstrates how I'd build a
-  defensible ROI case — which the role explicitly asks for.
+- Why: Overstating ROI is both dishonest and easy to puncture. Showing the method and
+  assumptions is more credible than a big number, and demonstrates a defensible, auditable ROI
+  methodology.
 
 ## 007. Explanation faithfulness is enforced and measured
 - Phase: 3/5
