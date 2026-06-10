@@ -53,11 +53,34 @@ These are the script for "why did you build it this way?" Add an entry on every 
 
 ## 005. Synthetic claims with authored ground-truth labels
 - Phase: 1
-- Decision: Generate synthetic claims (Synthea or authored) labeled with the true issue type,
-  including clean claims and near-miss edge cases.
-- Alternatives considered: Unlabeled synthetic data; anonymized real claims.
+- Decision: Generate synthetic claims via an **authored, deterministic Python generator**
+  (`app/seed.py`, fixed seed), labeled with the true issue type, including clean claims and
+  near-miss edge cases. Chose authored over Synthea.
+- Alternatives considered: Synthea; unlabeled synthetic data; anonymized real claims.
 - Why: Governance (no real/PHI data) and measurability — ground-truth labels are what make
-  detector precision/recall computable in `EVAL.md`. Near-miss cases make the eval honest.
+  detector precision/recall computable in `EVAL.md`. Synthea produces realistic *patient*
+  records but no payment-integrity defects (duplicate / unbundling / OON) and no labels, and
+  adds a heavyweight Java dependency; we'd still author the defects on top. An authored
+  generator gives full control of the label mix and the near-misses, and stays deterministic
+  per the guardrails.
+- Tradeoff accepted: The seed is only as realistic as the author; it shows the rules behave as
+  designed, not real-world prevalence (stated in `EVAL.md` limitations).
+- Revisit if: We need realistic claim distributions → layer authored defects onto a richer
+  synthetic base.
+
+## 008. One row per claim line; duplicate labeled on the redundant line
+- Phase: 1
+- Decision: The `claim` table is **line-granular** (`claim_id` groups lines, `line_id` is the
+  natural key). For a true duplicate, the *earlier* submission is labeled `clean` and the
+  *later* identical same-day line is labeled `duplicate` (the redundant overpayment). Each
+  unbundled component line is labeled `unbundling`; ROI for unbundling is computed once per
+  claim group, not per line.
+- Alternatives considered: One row per whole claim (forces a separate line table for
+  unbundling anyway); labeling both duplicate lines as positive (double-counts the recovery).
+- Why: Unbundling is inherently multi-CPT, so line granularity is the natural fit and keeps
+  precision/recall a clean per-line classification. Labeling only the redundant line as the
+  positive matches what is actually recoverable and prevents ROI double-counting.
+- Revisit if: Real claims arrive with header/line structure → mirror that explicitly.
 
 ## 006. The savings number is an explicit estimate with documented assumptions
 - Phase: 4
