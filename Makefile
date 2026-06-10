@@ -5,7 +5,7 @@
 # Override the interpreter with:  make run PY=.venv/Scripts/python
 PY ?= python
 
-.PHONY: install seed detect run eval test reset fmt
+.PHONY: install seed detect explain run eval test reset fmt
 
 install:        ## install dependencies into the active interpreter
 	$(PY) -m pip install -r requirements.txt
@@ -15,6 +15,9 @@ seed:           ## generate synthetic claims + ground-truth labels into SQLite
 
 detect:         ## run the transparent rules engine; persist flags + triggers
 	$(PY) -m app.detect
+
+explain:        ## generate LLM rationales for flags (needs ANTHROPIC_API_KEY in .env)
+	$(PY) -m app.explain
 
 run:            ## start the FastAPI app at http://localhost:8000
 	$(PY) -m uvicorn app.main:app --reload

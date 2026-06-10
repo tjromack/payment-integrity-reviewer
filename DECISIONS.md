@@ -132,3 +132,27 @@ These are the script for "why did you build it this way?" Add an entry on every 
   checks that explanations don't introduce unsupported reasons.
 - Why: An explanation that invents a rationale is worse than none — it would mislead a reviewer.
   Faithfulness is a measurable safety property, so it gets measured (`EVAL.md`).
+
+## 011. Explanation layer: model, parameters, and how it's invoked
+- Phase: 3
+- Decision:
+  - **Model:** default `claude-opus-4-8` (most capable), read from `ANTHROPIC_MODEL` so a
+    cheaper model (e.g. `claude-sonnet-4-6`) can be swapped in for high-volume runs. The model
+    actually used and a `PROMPT_VERSION` ("explain-v1") are persisted with every explanation.
+  - **Parameters:** send only `model`, `max_tokens`, `system`, `messages`. No `temperature` /
+    `top_p` / `top_k` / `thinking` — those are rejected (HTTP 400) on Opus 4.x, and pinning a
+    temperature wouldn't make the LLM step deterministic anyway (the prompt version is the
+    reproducibility anchor instead).
+  - **Grounding:** a fixed system prompt forbids new reasons and any approve/deny/recover
+    recommendation; the user message carries only the rule description + the recorded triggering
+    fields. A deterministic `is_grounded()` check (mentions the rule/issue + cites a triggering
+    value) backs the Phase 5 faithfulness eval.
+  - **Invocation:** `make explain` (or lazily per-flag in the UI) — NOT part of `make reset`, so
+    reset/detection stay fully offline and deterministic; explanations are the only networked,
+    non-deterministic step (CLAUDE.md §6).
+- Alternatives considered: temperature=0 for determinism (would 400 and is illusory);
+  generating explanations inside detection (couples a non-deterministic call into the
+  deterministic engine); baking the model id into code (loses the cost/quality lever).
+- Why: Keeps the LLM strictly an explainer, keeps detection offline/auditable, and makes every
+  explanation reproducible via the recorded model + prompt version.
+- Revisit if: Explanation volume/cost grows → batch via the Messages Batches API at 50% cost.
