@@ -44,11 +44,42 @@ def review_items(conn) -> list[dict]:
                 "status": decision["action"] if decision else STATUS_PENDING,
                 "decision": decision,
                 "triggering_fields": json.loads(flag["triggering_fields"]),
+                # Per-flag priority $ (see roi.flag_estimate — a "review this first" signal, not additive).
+                "estimate": roi.flag_estimate(flag, claims),
             }
         )
     # Pending first (the reviewer's worklist), then by id.
     items.sort(key=lambda it: (it["status"] != STATUS_PENDING, it["flag"]["id"]))
     return items
+
+
+# Filter/sort options for the queue view (a reviewer worklist should be prioritisable by $).
+STATUS_FILTERS = (STATUS_PENDING, "approve", "dismiss", "escalate")
+SORTS = ("priority", "amount", "confidence", "id")
+
+
+def sort_and_filter_items(items: list[dict], *, status: str = "all", sort: str = "priority") -> list[dict]:
+    """Filter the queue by decision status and order it — pure, so it's unit-testable.
+
+    `status`: 'all' or one of STATUS_FILTERS. `sort`:
+      - 'priority' (default): pending first, then highest estimated $ — the reviewer's worklist;
+      - 'amount': highest estimated $ first, regardless of status;
+      - 'confidence': highest detector confidence first;
+      - 'id': flag id ascending (stable, original order).
+    Unknown values fall back to the defaults rather than erroring on a hand-edited URL.
+    """
+    status = status if status in ("all", *STATUS_FILTERS) else "all"
+    sort = sort if sort in SORTS else "priority"
+    out = [it for it in items if status == "all" or it["status"] == status]
+    if sort == "amount":
+        out.sort(key=lambda it: (-it["estimate"], it["flag"]["id"]))
+    elif sort == "confidence":
+        out.sort(key=lambda it: (-(it["flag"]["confidence"] or 0), it["flag"]["id"]))
+    elif sort == "id":
+        out.sort(key=lambda it: it["flag"]["id"])
+    else:  # priority
+        out.sort(key=lambda it: (it["status"] != STATUS_PENDING, -it["estimate"], it["flag"]["id"]))
+    return out
 
 
 def flag_detail(conn, flag_id: int) -> dict | None:

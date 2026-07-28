@@ -1,20 +1,46 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2 style="margin-top:0">Review queue <span class="muted" style="font-size:14px">({{ items|length }} flags)</span></h2>
-<p class="muted">Pending flags first. Open one to see the rule, the triggering fields, and the explanation.</p>
+<h2 style="margin-top:0">Review queue
+  <span class="muted" style="font-size:14px">({{ items|length }} shown ·
+  est. ${{ '{:,.0f}'.format(visible_total) }} priority $)</span></h2>
+<p class="muted">A worklist: filter by decision, sort by estimated dollars so the biggest exposures
+  surface first. Open one to see the rule, the triggering fields, and the explanation.
+  <em>(Estimated $ is a per-flag priority signal, not a recovered amount.)</em></p>
+
+{# --- filter chips (by decision status) + sort links, preserving each other --- #}
+{% macro chip(key, label) -%}
+  <a class="chip {{ 'on' if status == key else '' }}" href="/queue?status={{ key }}&sort={{ sort }}">{{ label }}</a>
+{%- endmacro %}
+<div class="controls">
+  <span class="muted lbl">Filter:</span>
+  {{ chip('all', 'All (' ~ counts.all ~ ')') }}
+  {{ chip('pending', 'Pending (' ~ counts.pending ~ ')') }}
+  {{ chip('approve', 'Approved (' ~ counts.approve ~ ')') }}
+  {{ chip('dismiss', 'Dismissed (' ~ counts.dismiss ~ ')') }}
+  {{ chip('escalate', 'Escalated (' ~ counts.escalate ~ ')') }}
+</div>
+<div class="controls">
+  <span class="muted lbl">Sort:</span>
+  {% for s in sorts %}
+    <a class="chip {{ 'on' if sort == s else '' }}"
+       href="/queue?status={{ status }}&sort={{ s }}">{{ s }}{{ ' $' if s == 'amount' else '' }}</a>
+  {% endfor %}
+</div>
 
 {% if not items %}
 <div class="card">
-  <p style="margin:0">No flags to review yet.</p>
-  <p class="muted" style="margin-bottom:0">Generate some with <code>make reset</code> (seed + detect),
-    then refresh this page.</p>
+  <p style="margin:0">No flags{{ '' if status == 'all' else ' with status “' ~ status ~ '”' }} to show.</p>
+  <p class="muted" style="margin-bottom:0">
+    {% if status == 'all' %}Generate some with <code>make reset</code> (seed + detect), then refresh.
+    {% else %}<a href="/queue?status=all&sort={{ sort }}">Show all flags →</a>{% endif %}</p>
 </div>
 {% else %}
 <div class="card" style="padding:0">
   <table>
     <thead>
-      <tr><th>Status</th><th>Issue</th><th>Claim line</th><th>CPT</th><th>Allowed</th><th>Confidence</th><th></th></tr>
+      <tr><th>Status</th><th>Issue</th><th>Claim line</th><th>CPT</th><th>Allowed</th>
+          <th>Est. $ (priority)</th><th>Confidence</th><th></th></tr>
     </thead>
     <tbody>
     {% for it in items %}
@@ -24,6 +50,7 @@
         <td><code>{{ it.flag.claim_line_id }}</code></td>
         <td>{{ it.claim.cpt_code }}</td>
         <td>${{ '{:,.2f}'.format(it.claim.allowed_amount or 0) }}</td>
+        <td><strong>${{ '{:,.2f}'.format(it.estimate or 0) }}</strong></td>
         <td>{{ (it.flag.confidence * 100)|round|int }}%</td>
         <td><a href="/flag/{{ it.flag.id }}">Review →</a></td>
       </tr>

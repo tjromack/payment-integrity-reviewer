@@ -30,6 +30,35 @@ def _trig(flag: dict) -> dict:
     return json.loads(t) if isinstance(t, str) else t
 
 
+def flag_estimate(flag: dict, claims_by_line: dict[str, dict]) -> float:
+    """A single flag's estimated dollars — a **per-flag priority signal** for sorting the queue.
+
+    Uses the same per-issue assumptions as `estimated_savings`. Note the difference in intent: the
+    dashboard total dedupes unbundling to one figure per claim group, but this attributes the group
+    delta to each unbundling flag so a reviewer sees its priority — so these per-flag figures are NOT
+    additive into the dashboard total. It's a "review this one first" number, not an accounting line.
+    """
+    rule_id = flag["rule_id"]
+    if rule_id == "DUP-01":
+        line = claims_by_line.get(flag["claim_line_id"])
+        return round(line["allowed_amount"], 2) if line else 0.0
+    if rule_id == "OON-01":
+        line = claims_by_line.get(flag["claim_line_id"])
+        return round(OON_PRICING_DELTA * line["allowed_amount"], 2) if line else 0.0
+    if rule_id == "UNB-01":
+        t = _trig(flag)
+        components_allowed = sum(
+            claims_by_line[lid]["allowed_amount"]
+            for lid in t.get("component_line_ids", [])
+            if lid in claims_by_line
+        )
+        panel_allowed = CPT_ALLOWED.get(t.get("panel_code"))
+        delta = (components_allowed - panel_allowed) if panel_allowed is not None \
+            else UNBUNDLING_FALLBACK * components_allowed
+        return round(max(delta, 0.0), 2)
+    return 0.0
+
+
 def estimated_savings(flags: list[dict], claims_by_line: dict[str, dict]) -> dict:
     """Estimate dollars identified across `flags`.
 

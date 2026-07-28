@@ -219,3 +219,21 @@ These are the script for "why did you build it this way?" Add an entry on every 
 - Why: Keeps the LLM strictly an explainer, keeps detection offline/auditable, and makes every
   explanation reproducible via the recorded model + prompt version.
 - Revisit if: Explanation volume/cost grows → batch via the Messages Batches API at 50% cost.
+
+## 014. The review queue is a prioritisable worklist: per-flag priority $ + filter/sort (2026-07-28)
+- Decision: The queue gains a **per-flag estimated-dollar figure** (`roi.flag_estimate`) and **filter by
+  decision status** (all / pending / approved / dismissed / escalated) + **sort** (priority · amount $ ·
+  confidence · id), driven by `?status=&sort=` on `/queue` and a pure, unit-tested `dashboard.
+  sort_and_filter_items`. Default sort is **priority** — pending first, then highest estimated $ — so a
+  reviewer opens the biggest live exposures first. Filter chips show counts from the full set; a header shows
+  the visible total. Unknown URL values fall back to the defaults rather than erroring.
+- Why: A flat, id-ordered list is not a worklist — a reviewer with limited time should triage by dollars at
+  risk and by what's still pending. The dollar figure reuses the existing ROI assumptions (one source of
+  truth), and keeping the filter/sort logic a **pure function** makes the worklist behaviour testable without
+  a browser. The per-flag figure is explicitly labelled a **priority signal, not a recovered amount** (it does
+  not dedupe unbundling the way the dashboard total does — CLAUDE.md §5, the savings figure is an estimate).
+- Rejected: Sorting only by confidence (the model's signal, not the business's — dollars matter more for
+  triage); computing a bespoke per-flag ROI that re-implements the assumptions (drift — reuse `roi`); making
+  the per-flag figure additive into the dashboard total (would double-count unbundling — kept the dashboard's
+  group-dedupe as the accounting number and this as the triage number); client-side JS sorting (server-rendered
+  keeps it inspectable and testable, consistent with the suite).

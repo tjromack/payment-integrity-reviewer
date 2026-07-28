@@ -48,11 +48,23 @@ def index(request: Request) -> HTMLResponse:
 
 
 @app.get("/queue", response_class=HTMLResponse)
-def queue(request: Request) -> HTMLResponse:
+def queue(request: Request, status: str = "all", sort: str = "priority") -> HTMLResponse:
     conn = _conn()
-    items = dashboard.review_items(conn)
+    all_items = dashboard.review_items(conn)
     conn.close()
-    return templates.TemplateResponse(request, "queue.html", _ctx(request, items=items))
+    view = dashboard.sort_and_filter_items(all_items, status=status, sort=sort)
+    # Counts per status for the filter chips (from the full set, so the chips don't move as you filter).
+    counts = {"all": len(all_items)}
+    for s in dashboard.STATUS_FILTERS:
+        counts[s] = sum(1 for it in all_items if it["status"] == s)
+    visible_total = round(sum(it["estimate"] for it in view), 2)
+    return templates.TemplateResponse(
+        request, "queue.html",
+        _ctx(request, items=view, counts=counts, visible_total=visible_total,
+             status=(status if status in ("all", *dashboard.STATUS_FILTERS) else "all"),
+             sort=(sort if sort in dashboard.SORTS else "priority"),
+             sorts=dashboard.SORTS),
+    )
 
 
 @app.get("/flag/{flag_id}", response_class=HTMLResponse)
