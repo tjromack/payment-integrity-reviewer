@@ -1,5 +1,8 @@
 # Payment-Integrity Claims Reviewer
 
+> © 2026 Trevor J. Romack — **source-available for review, not open-source** ([LICENSE](LICENSE)). No reuse or
+> commercial use without permission. · tjromack@gmail.com
+
 A claims-review workflow that **detects** likely payment-integrity issues on synthetic claims
 with **transparent rules**, **explains** each flag in plain English with an LLM, and routes them
 through a **human approval queue** — with a running tally of estimated dollars identified.
