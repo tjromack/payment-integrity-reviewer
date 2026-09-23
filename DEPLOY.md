@@ -3,6 +3,8 @@
 The point of a hosted instance is a try-it link: a reader clicks and sees the reviewer queue, the flags, the triggering
 fields, and the AI rationale — without cloning anything.
 
+**Live:** https://payment-integrity-reviewer.onrender.com/ (Render free tier, keyless — see below).
+
 ## Architecture: detection offline, explanations cached, no key on the host
 
 - **Detection** is deterministic Python over the synthetic seed — no external calls.

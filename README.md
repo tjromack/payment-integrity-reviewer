@@ -7,6 +7,11 @@ A claims-review workflow that **detects** likely payment-integrity issues on syn
 with **transparent rules**, **explains** each flag in plain English with an LLM, and routes them
 through a **human approval queue** — with a running tally of estimated dollars identified.
 
+### ▶️ Try it live — **[payment-integrity-reviewer.onrender.com](https://payment-integrity-reviewer.onrender.com/)**
+Open the **review queue**, then a flag to see the rule that fired, the exact triggering fields, and the cached AI
+rationale. Detection is deterministic and the explanations are pre-cached, so the live app makes no model call.
+*(Free host — if it's asleep, the first request takes ~30s to wake.)*
+
 > Built in the payment-integrity problem space using **synthetic claims only — no PHI, no
 > internal systems**. This is a personal portfolio prototype. The savings figure is an explicit
 > *estimate* with stated assumptions, not a financial claim.
