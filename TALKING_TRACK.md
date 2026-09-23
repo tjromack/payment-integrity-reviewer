@@ -64,9 +64,13 @@ synthetic labeled claims ──▶ RULES detect (DUP-01 / UNB-01 / OON-01)
 
 Because the seed data carries ground-truth labels, you can measure both halves:
 
-1. **Detection** — precision / recall / F1 **by issue type**. The real precision test is the
-   **near-miss check: issue-like-but-legitimate claims correctly NOT flagged — 17/17.**
-2. **Explanation faithfulness — 0.97** — a two-layer check: a deterministic keyword/field match
+1. **Detection on the demo seed** — precision / recall / F1 = 1.00 by issue type, with the near-miss
+   check (issue-like-but-legitimate claims correctly NOT flagged — 17/17). That seed was written
+   alongside the rules, so 1.00 measures that they behave as designed.
+2. **Detection on a separately-written holdout** — precision 0.85, recall 0.47, F1 0.61. The holdout
+   probes what the rules were not tuned on (modifier-59 abuse, date-drift duplicates, partial and
+   cross-date unbundling); it measures coverage, and every miss is listed with the fix direction.
+3. **Explanation faithfulness — 0.97** — a two-layer check: a deterministic keyword/field match
    *plus* an LLM-as-judge with a versioned rubric (`faithful-judge-v1`) for "no invented reasons."
    Both must pass.
 
@@ -81,12 +85,15 @@ what it's genuinely good at: readable natural language.
 
 ---
 
-## Honest weakness (say it before they do)
+## The measured recall gap
 
-- **Recall is 1.0 only because the seed is rule-aligned by construction** — stated openly, not hidden.
-  Recall against messy real-world claims would be the real test.
-- The **ROI number is an estimate**, not recovered dollars — which is exactly why it's labeled
-  "dollars *identified*," split from "Confirmed," with adjustable assumptions surfaced on the dashboard.
+- **The demo seed scores 1.00 because it is rule-aligned by construction; the holdout scores 0.47
+  recall.** That gap is the real measurement: three narrow rules catch the textbook cases and miss
+  the real-world variants (modifier-59 abuse, date-drift duplicates, partial/cross-date unbundling).
+  The fix direction — a date window, partial-panel detection, treating modifier 59 as scrutiny-worthy
+  rather than exculpatory — is scoped in `EVAL.md`.
+- The **ROI number is an estimate**, not recovered dollars — which is why it's labeled "dollars
+  *identified*," split from "Confirmed," with adjustable assumptions surfaced on the dashboard.
 
 ---
 

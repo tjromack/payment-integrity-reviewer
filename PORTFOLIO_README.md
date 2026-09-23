@@ -24,6 +24,7 @@ systems.**
 - **Project 1** is the front of the pipeline — deciding *where* to apply AI at all.
 - **Project 2** is decision support inside a knowledge-heavy post-payment workflow.
 - **Project 3** is operational automation in a high-stakes review workflow.
+  **Live demo:** https://payment-integrity-reviewer.onrender.com/
 
 Together they cover prioritization, knowledge work, and operations — and across them, a broad set
 of AI capabilities: GenAI, RAG, agents/tooling, automation, model evaluation, ROI measurement,

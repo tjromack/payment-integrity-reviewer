@@ -54,6 +54,16 @@ Build in phases. **Stop at each approval gate.** Commit at every phase boundary.
 - [x] Finalize `DEMO.md`; verify `make reset` → demo path works cold.
 - **Gate:** full demo + eval run from a clean state.
 
+## Phase 7 — Portfolio audit remediation
+- [x] A separately-written holdout (`app/holdout.py`, `make holdout`) that tests the rules instead of confirming
+      them; published P/R/F1 (0.85 / 0.47 / 0.61) with every miss + the fix direction in `EVAL.md` (DECISIONS 015).
+- [x] Boundary + malformed-input tests (`tests/test_boundaries.py`, +15) targeting the failure modes.
+- [x] Real `make explain` + faithfulness published (0.97, 33/34); EVAL.md illustrative numbers replaced with real output.
+- [x] Explicit **Limits** + a **Demonstrates** line + two screenshots in the README; cross-platform quickstart.
+- [x] Keyless live demo on Render (committed pre-explained fixture; DECISIONS 016) —
+      https://payment-integrity-reviewer.onrender.com/
+- **Gate:** clears the portfolio rubric at Featured; the case study is the last step.
+
 ---
 
 ## Out of scope (note in README "Path to Production")

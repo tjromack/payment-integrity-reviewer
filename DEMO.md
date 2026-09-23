@@ -4,14 +4,18 @@ A tight, repeatable walkthrough. The moment that lands hardest: making explicit 
 detect, AI explains, and a human decides** — then showing the ROI tally and the eval. Practice
 it cold.
 
+**Live:** https://payment-integrity-reviewer.onrender.com/ — open it and skip the setup, or run locally below.
+
 ## Before the demo
 ```bash
 make reset      # wipe, re-seed labeled synthetic claims, re-run detection
 make explain    # optional: generate the LLM rationales (needs ANTHROPIC_API_KEY in .env)
 make run        # start server
-make eval       # optional: have a fresh eval report ready to show
+make eval       # detector P/R/F1 + faithfulness on the demo seed
+make holdout    # detector P/R/F1 on the separately-written holdout
 # open http://localhost:8000  (dashboard)
 ```
+*(Windows/PowerShell: no `make` — call the modules directly, e.g. `.venv\Scripts\python -m app.holdout`.)*
 > Detection and the dashboard work with no API key. `make explain` is the only step that
 > calls the LLM; without it, each flag's explanation panel shows a "run `make explain`" note.
 
@@ -40,10 +44,12 @@ make eval       # optional: have a fresh eval report ready to show
    *(Note: there's nothing to "dismiss as a false positive" — the look-alike near-miss claims were
    never flagged in the first place. That's the precision story, and the eval shows it.)*
 
-5. **Run the eval** (`make eval`). *"And I measure it: detector precision/recall/F1 by issue type
-   against the ground-truth labels — including how many issue-like near-misses it correctly left
-   alone — plus a faithfulness check that the explanations don't invent reasons."*
-   → Proves: measurement beyond demos; calibrated honesty about recall and precision.
+5. **Run the eval** (`make eval`, then `make holdout`). *"On the demo seed it scores 1.00 — but that
+   seed was written alongside the rules, so I built a separately-written holdout that probes what they
+   miss: modifier-59 abuse, date-drift duplicates, partial unbundling. It scores 0.85 / 0.47 / 0.61,
+   and I publish every miss with the fix direction. Plus a faithfulness check — 0.97 — that the
+   explanations don't invent reasons."*
+   → Proves: measurement beyond demos; a system that measures its own recall gap.
 
 ## The one-liner to anchor on
 *"Rules detect, AI explains, a human decides — and I can prove each part works."*

@@ -144,13 +144,27 @@ DETECTOR (overall)     precision 1.00  recall 1.00  F1 1.00
 EXPLANATION FAITHFULNESS   n/a - no explanations generated. Run `make explain`.
 ```
 
-**How to read it:** scores are 1.00 because the seed is rule-aligned by construction — that's
-expected and stated honestly. The number that actually means something is **near-misses correctly
-not flagged: 17/17**: those are claims engineered to *look* like issues but be legitimate (a
-same-day repeat with a modifier, an authorized out-of-network visit). Skipping them is what
-"precision" really tests here. With explanations generated (and a key present), the faithfulness
-line scores how many explanations stay grounded in the rule + fields, judged both by a
-deterministic check and an LLM-as-judge.
+**How to read it:** scores are 1.00 because the seed is rule-aligned by construction — the seed was
+written alongside the rules, so this measures that they behave as designed. The **near-misses
+correctly not flagged: 17/17** are claims engineered to *look* like issues but be legitimate (a
+same-day repeat with a modifier, an authorized out-of-network visit) — skipping them is what
+"precision" tests here.
+
+For what the rules *miss*, run the separately-written holdout:
+
+```bash
+make holdout
+```
+```
+DETECTOR (overall)     precision 0.85  recall 0.47  F1 0.61
+  duplicate            precision 0.57  recall 0.36  F1 0.44
+  unbundling           precision 1.00  recall 0.43  F1 0.60
+  oon_mismatch         precision 1.00  recall 1.00  F1 1.00
+```
+It probes claim shapes the rules were not tuned on — modifier-59 abuse, date-drift duplicates,
+partial and cross-date unbundling — and lists every miss (see `EVAL.md`). With explanations
+generated (and a key present), the faithfulness line scores how many explanations stay grounded in
+the rule + fields, judged by a deterministic check and an LLM-as-judge (0.97, 33/34).
 
 ---
 

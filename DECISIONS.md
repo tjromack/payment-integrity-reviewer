@@ -16,6 +16,37 @@ These are the script for "why did you build it this way?" Add an entry on every 
 
 ---
 
+## 016. Hosted demo: a committed, pre-explained DB — keyless and offline (2026-09-23)
+- Decision: Host on Render from a committed, pre-explained fixture (`data/demo.db`, 34 flags with cached rationales,
+  tracked via a `!data/demo.db` gitignore exception). `scripts/start.sh` copies it into place on boot; the running app
+  makes **no model call per request and needs no API key**. Live: https://payment-integrity-reviewer.onrender.com/.
+- Alternatives considered: key-at-boot + a persistent disk (regenerates explanations live — but they never change over a
+  fixed synthetic seed, and it puts an API key on a public host plus a disk cost); rules-only on the host (loses the
+  "AI explains" half of the demo).
+- Why: The explanations are static content over a deterministic seed, so there is nothing to regenerate live. Shipping
+  them cached keeps the host keyless, free ($0/mo), and immutable — and not putting a key on a public service matches
+  the tool's governed posture.
+- Tradeoff accepted: Refreshing the demo means regenerating + recommitting the fixture (`make reset && make explain &&
+  cp data/claims.db data/demo.db`) — a deliberate step, not a runtime cost.
+- Revisit if: the demo ever needs live/regenerating explanations → env-var key + a persistent disk (path kept in DEPLOY.md).
+
+## 015. A separately-written holdout, distinct from the rule-aligned seed (2026-09-23)
+- Decision: Add `app/holdout.py` (`make holdout`) — a generator written from the payer's side, reusing only the row
+  schema, that probes claim shapes the rules were not tuned on (modifier-59 abuse, date-drift duplicates, partial and
+  cross-date unbundling, a bilateral-modifier false positive). It scores the detector separately from the demo seed:
+  seed 1.00 → **holdout precision 0.85, recall 0.47, F1 0.61**, with every miss listed in `EVAL.md` and a stated fix
+  direction. Also fixed here: the eval counted a *fabrication incident* for any failed adversarial case — corrected to
+  count only when a forbidden lure is actually emitted (an abstention is a recall miss, not a fabrication); and a
+  grader that demanded a spelled-out number now accepts the digit form.
+- Alternatives considered: report only the demo seed (a 1.00 that cannot fail cannot test the rules); tune the rules to
+  close the gap now (the fix is a rule change — a date window, partial-panel detection, treating modifier 59 as
+  scrutiny-worthy — not a doc edit, and closing it would just require a fresh holdout).
+- Why: A seed authored alongside the rules measures that they behave as designed, not what they cover. The holdout
+  measures coverage; naming the misses and the fix is the useful output.
+- Tradeoff accepted: The published detector number is lower than the seed's 1.00. That lower number is the load-bearing one.
+- Revisit if: the rules gain a date window / partial-panel detection / modifier-59 scrutiny → regenerate the holdout so
+  it still probes cases the rules were not tuned on.
+
 ## 001. Stack: FastAPI + SQLite + HTMX
 - Phase: 0
 - Decision: Server-rendered HTMX on FastAPI with file-based SQLite.
