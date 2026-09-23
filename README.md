@@ -77,6 +77,10 @@ make reset       # wipe + re-seed + re-detect for a clean demo
 Set `ANTHROPIC_API_KEY` in `.env` for the explanation layer. Detection — and the whole served app — runs with no
 external calls.
 
+**Hosted / one-command container:** `docker build -t pir . && docker run -p 8000:8000 pir` serves the reviewer queue
+and dashboard. Detection runs offline and explanations are cached in the DB, so the running app makes no model call per
+request — see [`DEPLOY.md`](DEPLOY.md) (Render steps + the caching design).
+
 ## Evaluation
 
 Because the data is synthetic, it carries **ground-truth labels**, so detection quality is measurable
