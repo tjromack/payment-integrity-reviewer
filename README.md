@@ -123,8 +123,8 @@ Because the data is synthetic, it carries **ground-truth labels**, so detection 
 ## Responsible AI & data
 
 - **Synthetic claims only**, with authored ground-truth labels. No real claims or PHI.
-- **Detection is transparent.** Rules (and any statistical score) are inspectable; the reason a
-  claim was flagged is always a concrete, auditable trigger — never an opaque model verdict.
+- **Detection is transparent.** The rules are inspectable Python; the reason a claim was flagged
+  is always a concrete, auditable trigger — never an opaque model verdict.
 - **AI explains, it does not decide.** The LLM turns a triggered rule into a readable rationale;
   it has no authority to flag or clear a claim.
 - **Human decides.** Reviewers make the call; decisions are logged.
