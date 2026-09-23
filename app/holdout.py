@@ -205,8 +205,8 @@ def main() -> None:
         else:
             print(f"  {s:<22} {b['clean']} clean, {b['false_pos']} wrongly flagged")
 
-    print("\nThis is the honest number. The demo seed scores 1.00 because it was written alongside the rules;")
-    print("this holdout was written to break them. The misses above are documented in EVAL.md, not tuned away.")
+    print("\nThe demo seed scores 1.00 because it was authored alongside the rules; this holdout was authored to")
+    print("probe cases they were not written for. The misses above are listed in EVAL.md.")
 
 
 if __name__ == "__main__":

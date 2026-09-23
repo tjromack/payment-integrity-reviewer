@@ -39,16 +39,15 @@ DETECTOR (overall)     precision 1.00  recall 1.00  F1 1.00
   near-misses correctly not flagged: 17/17
 ```
 
-**Read this number honestly: 1.00 does not mean the rules are complete.** The seed was authored alongside the rules,
-so its positives are exactly the patterns the rules look for and its near-misses use exactly the modifiers the rules
-know. A perfect score here proves the rules **behave as designed** — it does not prove they catch what a payer needs
-caught. For that, see the holdout below.
+1.00 does not mean the rules are complete. The seed was authored alongside the rules, so its positives are exactly the
+patterns the rules look for and its near-misses use exactly the modifiers the rules know. A perfect score here measures
+that the rules behave as designed; it does not measure coverage of cases they were not written for. The holdout does.
 
-## Holdout — the honest number (`make holdout`)
+## Holdout (`make holdout`)
 
-The demo seed can't fail, so it can't tell you where the rules break. `app/holdout.py` is a **separately-written**
-generator: realistic claim shapes the rules were *not* tuned on, labeled for what a competent integrity system should
-catch. It reuses only the row schema — never the seed's scenarios — and it is expected to score below 1.0. Real output:
+The demo seed cannot fail, so it cannot show where the rules break. `app/holdout.py` is a separately-written generator:
+realistic claim shapes the rules were not tuned on, labeled for what a competent integrity system should catch. It
+reuses only the row schema, never the seed's scenarios. Output:
 
 ```
 HOLDOUT — 65 claim lines, separately generated
@@ -78,13 +77,10 @@ real-world variants.** OON detection is a robust field check (1.00/1.00). But du
   *exact* `date_of_service` and require the *whole* panel present.
 - **Precision leak.** Modifier `50` (bilateral) is a legitimately distinct repeat, but it isn't in the rule's
   distinct-service set, so the rule flags it — 3 false positives. A real reviewer would lose trust fast.
-- **Deliberate vs. genuine.** Some narrowness is a defensible precision/recall trade (flag only exact-date repeats to
-  avoid firing on legitimate next-day care). Modifier-59 scrutiny and bilateral handling are **genuine defects**, named
-  here rather than hidden. The fix direction — a date window on DUP-01, partial-panel detection on UNB-01, and a
-  modifier allow-list that treats `59` as *scrutiny-worthy* rather than *exculpatory* — is future work, not tuned away
-  to manufacture a clean score.
-
-This is the number an interviewer who runs the repo will see, and it is the one worth defending.
+- **Scope vs. defect.** Some narrowness is a precision/recall trade: flag only exact-date repeats to avoid firing on
+  legitimate next-day care. Modifier-59 scrutiny and bilateral handling are defects. The fix direction is a date window
+  on DUP-01, partial-panel detection on UNB-01, and a modifier policy that treats `59` as scrutiny-worthy rather than
+  exculpatory — scoped as future work.
 
 ## Explanation faithfulness
 

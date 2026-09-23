@@ -12,7 +12,7 @@ through a **human approval queue** — with a running tally of estimated dollars
 > *estimate* with stated assumptions, not a financial claim.
 
 **Demonstrates:** transparent rules detect, an LLM only explains, a human decides — with the detector scored on a
-**separately-written holdout** and its misses published, not hidden.
+**separately-written holdout** and its misses listed.
 
 ---
 
@@ -79,15 +79,15 @@ external calls.
 
 ## Evaluation
 
-Because the data is synthetic, it carries **ground-truth labels**, so detection quality is measurable — and reported
-honestly (`make eval` / `make holdout`, full write-up in `EVAL.md`):
+Because the data is synthetic, it carries **ground-truth labels**, so detection quality is measurable
+(`make eval` / `make holdout`, full write-up in `EVAL.md`):
 
 - **On the demo seed: 1.00 P/R/F1.** But the seed was written alongside the rules, so a perfect score proves the rules
   *behave as designed*, not that they catch what a payer needs caught.
 - **On a separately-written holdout: precision 0.85, recall 0.47, F1 0.61.** The rules nail the textbook cases
   (exact-date duplicates, full-panel unbundling, OON — all 100%) but miss real-world variants: **modifier-59 abuse**,
   **date-drift duplicates**, and **partial / cross-date unbundling** — the two most-cited real evasion tactics. Every
-  miss is published in `EVAL.md`, not tuned away.
+  miss is listed in `EVAL.md`.
 - **Explanation faithfulness: 0.97 (33/34)**, LLM-judged, with the one flagged case shown to be a judge error — because
   the check is deterministic-grounding-first and the judge is spot-checked, not trusted blindly.
 
