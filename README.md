@@ -27,6 +27,13 @@ whether the flagging is any good.
 This tool separates those concerns cleanly: **rules detect, AI explains, a human decides**, and
 a dashboard shows the resulting value.
 
+![A flagged claim: the deterministic triggers that fired, a grounded plain-English explanation, and the human decision](docs/flag-detail.png)
+
+*One flag, top to bottom — the three concerns kept apart: **① Why it was flagged** — rule `DUP-01` and the exact fields
+that triggered it (deterministic, no model in the loop). **② Plain-English explanation** — the LLM explains, grounded
+strictly in those fields, with the model + prompt version stamped on it. **③ Your decision** — a human approves,
+dismisses, or escalates; the model never does.*
+
 ## Who it's for
 
 Payment-integrity / claims-review analysts and the leaders who need to see throughput and impact.
@@ -42,6 +49,11 @@ Payment-integrity / claims-review analysts and the leaders who need to see throu
   as labeled data for future improvement.
 - **Dashboard:** flagged volume, reviewer outcomes (approved / dismissed / escalated), and
   **estimated dollars identified** (clearly labeled as an estimate).
+
+![The review queue: flags sorted by estimated dollars, filterable by decision](docs/review-queue.png)
+
+*The review queue — each flag with its issue type, rule confidence, and an estimated-$ priority (a per-flag signal,
+**not** a recovered amount), filterable by decision and sorted so the biggest exposures surface first.*
 
 ## Why this design
 
@@ -62,16 +74,29 @@ See `DECISIONS.md` for why each choice was made, especially why the LLM does not
 
 ## Quickstart
 
+**macOS / Linux:**
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-make seed        # generate synthetic claims WITH ground-truth labels (clean + problematic)
-make detect      # run the rules engine over the seed; persist flags + confidence + triggers
-make run         # uvicorn app.main:app --reload  → http://localhost:8000
-make eval        # detector precision/recall/F1 + explanation faithfulness on the demo seed (EVAL.md)
-make holdout     # detector P/R/F1 on a SEPARATELY-written holdout — the honest number
-make reset       # wipe + re-seed + re-detect for a clean demo
+make seed && make detect   # labeled claims + the rules engine (flags, confidence, triggers)
+make run                   # → http://localhost:8000
+make eval                  # detector P/R/F1 + explanation faithfulness on the demo seed (EVAL.md)
+make holdout               # detector P/R/F1 on a separately-written holdout
+make reset                 # wipe + re-seed + re-detect for a clean demo
+```
+
+**Windows (PowerShell):** no `make`, and PowerShell has no `&&` — call the modules directly (each `make` target is
+just one of these):
+```powershell
+python -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt
+
+.venv\Scripts\python -m app.seed
+.venv\Scripts\python -m app.detect
+.venv\Scripts\python -m uvicorn app.main:app --port 8000   # → http://localhost:8000
+.venv\Scripts\python -m app.eval        # detector P/R/F1 + faithfulness (EVAL.md)
+.venv\Scripts\python -m app.holdout     # separately-written holdout
 ```
 
 Set `ANTHROPIC_API_KEY` in `.env` for the explanation layer. Detection — and the whole served app — runs with no
@@ -109,10 +134,10 @@ Because the data is synthetic, it carries **ground-truth labels**, so detection 
 
 - **Synthetic, hand-labeled data.** Results show whether the rules behave as designed, not real-world performance on
   live claims. No PHI, no real fee schedules, no payer policy library.
-- **Three narrow rules, with a measured recall gap.** The holdout (0.47 recall) is the honest bound: DUP-01 keys on an
-  exact date and trusts distinct-service modifiers, UNB-01 needs the whole panel present, so **modifier-59 abuse,
-  date-drift duplicates, and partial/cross-date unbundling are missed** today. These are named, not hidden — and are
-  the stated fix direction, not a solved problem.
+- **Three narrow rules, with a measured recall gap.** The holdout (0.47 recall) is the measured bound: DUP-01 keys on
+  an exact date and trusts distinct-service modifiers, UNB-01 needs the whole panel present, so **modifier-59 abuse,
+  date-drift duplicates, and partial/cross-date unbundling are missed** today. The fix direction is scoped as future
+  work, not a solved problem.
 - **Not an adjudication engine.** It assembles evidence and a cited rationale for a human reviewer; it does not decide,
   price, or pay a claim. No auto-clear, no auto-deny.
 - **The savings figure is an estimate**, not validated recovery — assumptions live in `data/roi_assumptions.md`.
@@ -137,16 +162,22 @@ Because the data is synthetic, it carries **ground-truth labels**, so detection 
 app/
   main.py          # FastAPI app + routes
   models.py        # SQLite schema (claims, flags, decisions)
-  seed.py          # synthetic claims generator WITH ground-truth labels
-  detect.py        # transparent rules engine (+ optional statistical score)
+  reference.py     # shared reference data (CPT prices, panels, modifiers) — seed + rules read the same tables
+  seed.py          # synthetic claims generator WITH ground-truth labels (the demo seed)
+  holdout.py       # a SEPARATELY-written generator that probes the rules' blind spots (make holdout)
+  detect.py        # transparent rules engine (DUP-01 / UNB-01 / OON-01) — no model calls
   explain.py       # LLM explanation grounded in the triggering rule + fields
-  dashboard.py     # volume, outcomes, estimated $ identified (with assumptions)
   eval.py          # detector P/R/F1 + explanation faithfulness
-  templates/       # reviewer queue + dashboard
+  dashboard.py     # volume, outcomes, estimated $ identified (with assumptions)
+  roi.py           # savings estimate (assumptions in data/roi_assumptions.md)
+  templates/       # reviewer queue + flag detail + dashboard
 data/
-  claims.seed.json         # synthetic claims + ground-truth labels
+  claims.db                # generated by `app.seed` / `app.detect` (gitignored)
   roi_assumptions.md       # documented assumptions behind the savings estimate
-DECISIONS.md  DEMO.md  EVAL.md  TODO.md  CLAUDE.md
+tests/             # rules, boundaries/malformed input, eval, explain, views
+docs/              # screenshots (flag-detail.png, review-queue.png)
+Dockerfile  Makefile  scripts/start.sh
+DECISIONS.md  DEMO.md  EVAL.md  DEPLOY.md  USER_GUIDE.md  TODO.md  CLAUDE.md
 ```
 
 ## Status
