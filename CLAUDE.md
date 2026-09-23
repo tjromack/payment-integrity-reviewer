@@ -71,3 +71,11 @@ make fmt       # format
 - Do not let an explanation introduce a reason that the rules did not actually trigger.
 - Do not present the estimated savings as real recovered dollars.
 - Do not use real or PHI data; do not proceed past an approval gate without approval.
+
+## Case study voice
+State plainly what the system is, what it does, the decisions made, and what was learned.
+
+- No disclaimers about the author's experience. Limits belong to the system, stated as scope or cost.
+- No honesty signalling ("the honest version", "published as a loss"). State the number.
+- No apologising for scale. State the numbers and the design target.
+- Real limits, costs, and failures stay — as facts about the system, not confessions.

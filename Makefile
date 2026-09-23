@@ -5,7 +5,7 @@
 # Override the interpreter with:  make run PY=.venv/Scripts/python
 PY ?= python
 
-.PHONY: install seed detect explain run eval test reset fmt
+.PHONY: install seed detect explain run eval holdout test reset fmt
 
 install:        ## install dependencies into the active interpreter
 	$(PY) -m pip install -r requirements.txt
@@ -22,8 +22,11 @@ explain:        ## generate LLM rationales for flags (needs ANTHROPIC_API_KEY in
 run:            ## start the FastAPI app at http://localhost:8000
 	$(PY) -m uvicorn app.main:app --reload
 
-eval:           ## detector P/R/F1 by issue type + explanation faithfulness
+eval:           ## detector P/R/F1 by issue type + explanation faithfulness (on the demo seed)
 	$(PY) -m app.eval
+
+holdout:        ## detector P/R/F1 on a SEPARATELY-written holdout set (the honest number)
+	$(PY) -m app.holdout
 
 test:           ## run the test suite
 	$(PY) -m pytest

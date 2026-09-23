@@ -11,6 +11,9 @@ through a **human approval queue** — with a running tally of estimated dollars
 > internal systems**. This is a personal portfolio prototype. The savings figure is an explicit
 > *estimate* with stated assumptions, not a financial claim.
 
+**Demonstrates:** transparent rules detect, an LLM only explains, a human decides — with the detector scored on a
+**separately-written holdout** and its misses published, not hidden.
+
 ---
 
 ## The problem it solves
@@ -66,20 +69,27 @@ pip install -r requirements.txt
 make seed        # generate synthetic claims WITH ground-truth labels (clean + problematic)
 make detect      # run the rules engine over the seed; persist flags + confidence + triggers
 make run         # uvicorn app.main:app --reload  → http://localhost:8000
-make eval        # detector precision/recall/F1 + explanation faithfulness (see EVAL.md)
+make eval        # detector precision/recall/F1 + explanation faithfulness on the demo seed (EVAL.md)
+make holdout     # detector P/R/F1 on a SEPARATELY-written holdout — the honest number
 make reset       # wipe + re-seed + re-detect for a clean demo
 ```
 
-Set `ANTHROPIC_API_KEY` in `.env` for the explanation layer. Detection runs with no external
-calls.
+Set `ANTHROPIC_API_KEY` in `.env` for the explanation layer. Detection — and the whole served app — runs with no
+external calls.
 
 ## Evaluation
 
-Because the data is synthetic, it carries **ground-truth labels**, so detection quality is
-measurable (`make eval`, see `EVAL.md`):
-- **Detector precision / recall / F1** against the labeled claims.
-- **Explanation faithfulness** — does the LLM explanation reference the rule and fields that
-  actually fired, without inventing reasons?
+Because the data is synthetic, it carries **ground-truth labels**, so detection quality is measurable — and reported
+honestly (`make eval` / `make holdout`, full write-up in `EVAL.md`):
+
+- **On the demo seed: 1.00 P/R/F1.** But the seed was written alongside the rules, so a perfect score proves the rules
+  *behave as designed*, not that they catch what a payer needs caught.
+- **On a separately-written holdout: precision 0.85, recall 0.47, F1 0.61.** The rules nail the textbook cases
+  (exact-date duplicates, full-panel unbundling, OON — all 100%) but miss real-world variants: **modifier-59 abuse**,
+  **date-drift duplicates**, and **partial / cross-date unbundling** — the two most-cited real evasion tactics. Every
+  miss is published in `EVAL.md`, not tuned away.
+- **Explanation faithfulness: 0.97 (33/34)**, LLM-judged, with the one flagged case shown to be a judge error — because
+  the check is deterministic-grounding-first and the judge is spot-checked, not trusted blindly.
 
 ## Responsible AI & data
 
@@ -90,6 +100,20 @@ measurable (`make eval`, see `EVAL.md`):
   it has no authority to flag or clear a claim.
 - **Human decides.** Reviewers make the call; decisions are logged.
 - **The dollars figure is an estimate** with assumptions shown on the dashboard.
+
+## Limits — what this does *not* let you claim
+
+- **Synthetic, hand-labeled data.** Results show whether the rules behave as designed, not real-world performance on
+  live claims. No PHI, no real fee schedules, no payer policy library.
+- **Three narrow rules, with a measured recall gap.** The holdout (0.47 recall) is the honest bound: DUP-01 keys on an
+  exact date and trusts distinct-service modifiers, UNB-01 needs the whole panel present, so **modifier-59 abuse,
+  date-drift duplicates, and partial/cross-date unbundling are missed** today. These are named, not hidden — and are
+  the stated fix direction, not a solved problem.
+- **Not an adjudication engine.** It assembles evidence and a cited rationale for a human reviewer; it does not decide,
+  price, or pay a claim. No auto-clear, no auto-deny.
+- **The savings figure is an estimate**, not validated recovery — assumptions live in `data/roi_assumptions.md`.
+- **The LLM only explains.** It has no authority to flag or clear, and its explanations are scored for faithfulness
+  (with a judge that has its own error rate, so it is spot-checked).
 
 ## Path to production
 
