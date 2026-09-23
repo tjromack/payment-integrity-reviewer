@@ -5,6 +5,9 @@ Overview · The Problem · Constraints · Architecture · Key Decisions · How I
 What I'd Do Differently · Limits · Closing. Mixed first/third person, past tense, terse.
 Voice per repo CLAUDE.md: state the numbers, no honesty-signalling. Every figure is reproducible
 from the repo — see EVAL.md, `make eval`, `make holdout`.
+
+Images: flag-detail.png and review-queue.png live in this docs/ folder. Paths below are relative
+to it; repoint them to the site's asset paths when porting into the site repo.
 -->
 
 # Payment-Integrity Claims Reviewer — rules detect, an LLM explains, a human decides
@@ -31,6 +34,13 @@ The design choice the whole project is built around is where the model sits: **t
 flagged or how it ranks.** Detection is deterministic Python; the model only explains, grounded strictly in the rule
 and the triggering fields, with the model and prompt version recorded on every explanation. In a regulated review
 workflow, why a claim was flagged has to be auditable — and an opaque model verdict is not.
+
+![A flagged claim: the rule and exact fields that fired, a grounded plain-English explanation, and the human decision](flag-detail.png)
+
+*One flag holds all three concerns apart: **① Why it was flagged** — the rule (`DUP-01`) and the exact fields that
+triggered it, deterministic and inspectable. **② The explanation** — the LLM's rationale, grounded in those fields, with
+the model and prompt version recorded. **③ The decision** — a human approves, dismisses, or escalates; the model never
+does.*
 
 ## The Problem
 
@@ -67,6 +77,11 @@ sortable by priority, amount, or confidence — and every approve/dismiss/escala
 dashboard shows **Identified** (all flagged) against **Confirmed** (approved only), the dollar total single-sourced from
 one ROI module and badged as an estimate. Detection and the whole served app run offline; the model is touched only when
 explanations are generated, and on the hosted demo they are already cached.
+
+![The review queue: flags with issue type, confidence, and an estimated-dollar priority, sorted and filterable](review-queue.png)
+
+*The queue as a worklist — each flag with its issue type, rule confidence, and a per-flag dollar priority (a triage
+signal, not a recovered amount), filterable by decision and sorted so the largest live exposures surface first.*
 
 ## Key Decisions
 
