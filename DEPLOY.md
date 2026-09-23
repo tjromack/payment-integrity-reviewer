@@ -1,49 +1,50 @@
 # DEPLOY.md — hosting the demo
 
 The point of a hosted instance is a try-it link: a reader clicks and sees the reviewer queue, the flags, the triggering
-fields, and the cached AI rationale — without cloning anything.
+fields, and the AI rationale — without cloning anything.
 
-## Architecture: detection offline, explanations cached
+## Architecture: detection offline, explanations cached, no key on the host
 
-- **Detection** is deterministic Python over the synthetic seed. It makes no external calls and runs at container boot.
-- **Explanations** are LLM-generated but **cached in the SQLite DB**. They are produced once — at first boot, if a key
-  is present — and served from that cache. The running app makes **no model call per request**, so a public URL cannot
-  run up an API bill through traffic.
+- **Detection** is deterministic Python over the synthetic seed — no external calls.
+- **Explanations** are LLM-generated once, offline, and **shipped as a pre-explained fixture** (`data/demo.db`, tracked
+  in the repo). The running app reads them from that DB and makes **no model call** — so the public URL needs **no API
+  key** and cannot run up a bill through traffic.
 
-`scripts/start.sh` enforces this: it seeds + detects + explains only when the DB has no flags yet, and otherwise serves
-the existing data untouched. Put the DB on a **persistent volume** and "once" is once — restarts reuse the cache.
+`scripts/start.sh` copies `data/demo.db` into place on first boot and serves it. The seed is fixed, so the demo is the
+same known-good state every time.
 
 ## Run it locally (Docker)
 
 ```bash
 docker build -t pir .
-# with cached explanations (key used once, at boot, then never again):
-docker run -p 8000:8000 -e ANTHROPIC_API_KEY=sk-ant-... pir
-# or rules-only (no key, no rationales — still a working demo):
-docker run -p 8000:8000 pir
+docker run -p 8000:8000 pir      # no key, no config
 ```
 Open http://localhost:8000.
 
-## Render (like the Suver demo)
+## Render (recommended — free, keyless)
 
-1. New **Web Service** → build from this repo (Docker).
-2. **Environment:** `ANTHROPIC_API_KEY` (used once at first boot to cache rationales). Render sets `PORT`; the image
-   honours it.
-3. **Add a Disk** mounted at `/app/data` (1 GB is plenty). This persists `claims.db`, so explanations are generated
-   once for the life of the disk — a restart or redeploy reuses the cache and spends nothing.
-4. Deploy. First boot runs seed + detect + explain (~34 short calls, one time); every boot after serves from the disk.
+1. New **Web Service** → build from this repo (Docker). Render detects the `Dockerfile`.
+2. **No environment variables, no disk.** The image already carries the pre-explained demo DB.
+3. Deploy. That's it. (Render's free tier spins the service down after inactivity and back up on the next request — a
+   ~30s cold start, same as any free demo; fine for a portfolio link.)
 
-**Cost:** the only spend is that one-time explanation pass (~34 short completions). With the disk in place it does not
-recur. Without a disk, each cold start regenerates the cache — add the disk to avoid that.
+**Cost: $0/mo.** No API key on the host, no per-request model calls, no persistent disk.
 
-## Alternative: zero key on the host
+## Refreshing the demo data
 
-If you would rather the host never hold a key: run `make explain` locally, copy the resulting `data/claims.db` into
-the image at build (drop the `data/*.db` line from `.dockerignore` and `COPY data/claims.db /app/data/claims.db`), and
-the container serves fully pre-cached. `start.sh` will see the flags and skip the rebuild.
+The fixture is generated, not hand-edited. To regenerate it (e.g. after a rules change or a new prompt version):
 
-## 🙋 Manual (Trevor)
+```bash
+make reset                 # re-seed + re-detect  (Windows: python -m app.seed; python -m app.detect)
+make explain               # cache fresh rationales   (needs ANTHROPIC_API_KEY in .env, one-time)
+cp data/claims.db data/demo.db
+git add data/demo.db && git commit -m "Refresh demo fixture"
+```
+Redeploy and the new state ships.
 
-- The actual Render deploy (account, env var, disk) is yours to run — the image + this doc are ready.
-- Pick the explanation strategy: **key-at-boot + disk** (recommended, above) or **committed pre-explained DB** (zero
-  key on host). Say which and I'll wire the `.dockerignore`/`COPY` for the second if you want it.
+## If you ever want live explanations instead
+
+Set `ANTHROPIC_API_KEY` as a Render env var and add a **Disk** mounted at `/app/data`. With no committed fixture in
+play, `start.sh` builds the DB and caches explanations once on first boot (idempotent), and the disk keeps that cache
+across restarts. This trades $0/keyless for the ability to regenerate rationales on the host — unnecessary for a fixed
+synthetic demo, but documented for completeness.

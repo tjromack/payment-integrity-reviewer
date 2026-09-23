@@ -1,9 +1,8 @@
 # Payment-Integrity Claims Reviewer — container image.
 #
-# Detection is deterministic and offline. Explanations are LLM-generated but CACHED in the SQLite
-# DB: they are produced once (at first boot, if a key is present) and served from cache thereafter,
-# so the running app makes NO model call per request. Mount the DB on a persistent volume
-# (see DEPLOY.md) and that "once" is truly once — restarts reuse the cache.
+# Detection is deterministic and offline. Explanations are LLM-generated but CACHED: the image
+# ships a pre-explained demo DB (data/demo.db), so the running app makes NO model call — and needs
+# NO API key. On first boot start.sh copies the fixture into place and serves it. See DEPLOY.md.
 FROM python:3.13-slim
 
 ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
