@@ -67,6 +67,11 @@ tracking, and responsible AI in a payment-integrity workflow. The defining desig
 keeping *detection* transparent and auditable while using AI only for *explanation* — is the
 "where AI should and should not be used" judgment applied to a regulated, high-stakes workflow.
 
+The other defining choice is **precision-first, because a false positive costs more than a miss.** A wrong flag sent to a
+provider causes provider abrasion — pushback, appeals, eroded trust — so the rules fire only on the patterns they're
+confident about, and a human approves every flag before anyone is contacted. That asymmetry, and how it shapes the
+threshold, is written out in [`EVAL.md`](EVAL.md#the-false-positive-cost-and-why-precision-comes-first).
+
 ## Tech stack
 
 - **Backend:** FastAPI (Python)

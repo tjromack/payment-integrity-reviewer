@@ -82,6 +82,31 @@ real-world variants.** OON detection is a robust field check (1.00/1.00). But du
   on DUP-01, partial-panel detection on UNB-01, and a modifier policy that treats `59` as scrutiny-worthy rather than
   exculpatory — scoped as future work.
 
+## The false-positive cost, and why precision comes first
+
+A false positive here is not just wasted reviewer time. A wrong flag that reaches a provider — a demand to return money
+on a legitimately-paid claim — causes **provider abrasion**: it generates pushback and appeals, consumes goodwill, and
+erodes provider trust in the integrity program itself. A missed overpayment (a false negative) leaks a dollar; a false
+positive can cost the relationship. The two errors are not symmetric, and the asymmetry favours precision.
+
+That asymmetry is visible in the design, not just asserted:
+
+- **The rules are precision-first.** They fire only on the patterns they are confident about — exact-date duplicates,
+  a whole panel billed as components, an unambiguous out-of-network mismatch — and each flag carries a rule-derived
+  confidence. They do **not** chase recall at the cost of firing on legitimate claims. The holdout makes the posture a
+  number: **precision 0.85, recall 0.47** — the rules would rather miss a real-world variant than flag a clean claim.
+- **The human is the last false-positive backstop.** No provider is ever contacted on a rule's say-so: a person
+  approves, dismisses, or escalates every flag, and the "dollars identified" figure is split from the reviewer-confirmed
+  figure precisely so an unreviewed flag never counts as a recovery. The most important threshold is not a number — it
+  is the human in the loop.
+- **The tunable threshold reflects the cost.** `PRECISION_TARGET` (≥ 0.85 in the eval) is the dial: it is set against a
+  reviewer's tolerance for false positives, not against a recall goal. In production it would be calibrated from the
+  approve/dismiss history — the accumulated cost of each wrong flag — rather than a fixed assumption.
+
+The tradeoff is stated openly in the holdout: precision-first means real recall gaps (modifier-59 abuse, date-drift
+duplicates, partial unbundling). Closing them is a rule change that must not raise the false-positive rate — which is the
+whole point of scoring precision and recall separately, and never letting recall be bought with provider abrasion.
+
 ## Explanation faithfulness
 
 The LLM only explains; this checks it explains *honestly*. For each flagged claim, the
