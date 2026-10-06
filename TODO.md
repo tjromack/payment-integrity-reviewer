@@ -64,6 +64,19 @@ Build in phases. **Stop at each approval gate.** Commit at every phase boundary.
       https://payment-integrity-reviewer.onrender.com/
 - **Gate:** clears the portfolio rubric at Featured; the case study is the last step.
 
+## A1 add-on — the rules in SQL (portfolio playbook v3, 2026-10-06)
+- [x] Re-express DUP-01 / UNB-01 / OON-01 in SQL over the same SQLite table (`app/detect_sql.py`); build the SQL from
+      `reference.py` so there's one source of truth (DECISIONS 017).
+- [x] Prove parity with the Python engine: bidirectional `EXCEPT` (empty both ways, equal counts) on seed + holdout,
+      comparing claim_line_id + rule_id + confidence (`make sql`).
+- [x] Explicit OON NULL-network policy (unknown never fires); tested on a relaxed table.
+- [x] Close the two named gaps: **DUP-02** date-drift (self-join *and* `LAG`, proven equal) and **UNB-02** partial
+      unbundling (DECISIONS 018). Holdout recall 0.47 → 0.86, precision 0.85 → 0.91, no new false positives.
+- [x] Scoring in SQL by conditional aggregation; reproduces the Python holdout numbers for the three rules.
+- [x] `make sql-dump` renders the live SQL to `sql/payment_integrity_rules.sql` (feeds the SQL drill lab).
+- [x] Tests: `tests/test_detect_sql.py` (+8 → 61 total). EVAL.md, DECISIONS.md, README, case study updated.
+- **Still open (documented):** modifier-59 abuse, the next-day tail of a cross-date split, the bilateral (mod-50) FP.
+
 ---
 
 ## Out of scope (note in README "Path to Production")

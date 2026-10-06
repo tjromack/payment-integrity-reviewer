@@ -80,7 +80,57 @@ real-world variants.** OON detection is a robust field check (1.00/1.00). But du
 - **Scope vs. defect.** Some narrowness is a precision/recall trade: flag only exact-date repeats to avoid firing on
   legitimate next-day care. Modifier-59 scrutiny and bilateral handling are defects. The fix direction is a date window
   on DUP-01, partial-panel detection on UNB-01, and a modifier policy that treats `59` as scrutiny-worthy rather than
-  exculpatory — scoped as future work.
+  exculpatory. Two of these — a date window (`DUP-02`) and partial-panel detection (`UNB-02`) — are now implemented in
+  the SQL rule set (`make sql`; see the next section); the modifier-59 policy remains future work.
+
+## The rules in SQL — parity, then two gaps closed (`make sql`)
+
+Payment-integrity edits are written and reviewed as SQL far more often than as application code, so the three rules are
+re-expressed relationally in `app/detect_sql.py` over the same SQLite `claim` table — and the two implementations are
+proven equal *before* anything new is added. `make sql` runs the whole proof; `make sql-dump` renders the live queries
+to `sql/payment_integrity_rules.sql` for inspection.
+
+**Parity — the SQL equals the Python engine.** DUP-01, UNB-01 and OON-01 are compared flag-for-flag (`claim_line_id`,
+`rule_id`, rule-derived `confidence`) by a **bidirectional `EXCEPT`**: both differences are empty and the row counts
+match, on the demo seed (34 = 34) and on the holdout (20 = 20). SQLite has only set-based `EXCEPT`, not `EXCEPT ALL`;
+each rule emits one row per line, so `EXCEPT` empty both ways *plus* equal counts is exactly the `EXCEPT ALL`-both-ways-empty
+guarantee a warehouse would write directly. The SQL scorer reproduces the Python holdout numbers exactly for these three
+rules — the parity check applied to scoring, not just to flags.
+
+**Two gaps closed, in SQL.** With parity established, two SQL-only rules close holdout misses named above:
+
+- **DUP-02 — date-drift duplicates.** The same service on *adjacent* days (DUP-01 keys on an exact date). Written
+  **twice** — a self-join and a `LAG` window — and proven to return the same flags on both datasets. The `LAG` form is
+  canonical: one partitioned sort, O(n log n), versus the self-join's O(k²) per (member, provider, CPT) group. The
+  self-join is kept for readability and because it generalises to "any earlier line in the window," not just the
+  immediate predecessor.
+- **UNB-02 — partial unbundling.** ≥2 but not all of a panel's components billed separately (UNB-01 needs the whole
+  panel). As a side effect it also catches the same-day portion of a cross-date split, which is correct — those lines
+  are unbundling too.
+
+Scored in SQL (precision/recall/F1 by conditional aggregation), the SQL rule set moves the holdout detector:
+
+| On the holdout | Before (3 rules) | After (+ DUP-02, UNB-02) |
+|---|---|---|
+| **Overall** | P 0.85 · R 0.47 · F1 0.61 | **P 0.91 · R 0.86 · F1 0.89** |
+| duplicate | P 0.57 · R 0.36 | **P 0.73 · R 0.73** |
+| unbundling | P 1.00 · R 0.43 | **P 1.00 · R 0.91** |
+| oon_mismatch | P 1.00 · R 1.00 | P 1.00 · R 1.00 |
+
+Recall rose from **0.47 to 0.86** and **precision did not fall** — it rose to 0.91, because the gap-closers added only
+true positives (the false-positive count is unchanged at 3). This is the whole point of scoring precision and recall
+separately: recall was bought without a single extra wrong flag, so without new provider abrasion.
+
+**Still open (documented, not closed here).** Three holdout misses remain, on purpose:
+- **Modifier-59 abuse** — a true duplicate stamped with a distinct-service modifier it did not earn. The SQL rules, like
+  the Python rules, trust `59`; treating it as scrutiny-worthy is a modifier-*policy* change, not a new rule, and is the
+  highest-value next step.
+- **The next-day tail of a cross-date split** — UNB-02 catches the same-day portion; the component that drifts to the
+  next day still escapes a same-date grouping.
+- **The bilateral (modifier 50) false positive** — the one precision leak, carried by DUP-01; adding `50` to the
+  distinct-service set would clear it.
+
+These keep the holdout honest: it still probes cases the rules are not tuned on.
 
 ## The false-positive cost, and why precision comes first
 

@@ -102,6 +102,12 @@ signal, not a recovered amount), filterable by decision and sorted so the larges
 5. **Host from a committed, pre-explained database.** The explanations are static over a fixed seed, so the image ships
    them cached: the running app makes no model call, needs no key, and costs nothing to host. The tradeoff is that
    refreshing the demo is a regenerate-and-recommit step rather than a live call.
+6. **Re-express the rules in SQL, and prove it before extending it.** Payment-integrity edits are written and reviewed
+   as SQL far more than as application code, so the three rules were restated relationally over the same table and shown
+   equal to the Python engine flag-for-flag (a bidirectional `EXCEPT`, empty both ways) before a line of new logic was
+   added. Only then did two SQL rules close the holdout's named gaps — date-drift duplicates and partial unbundling —
+   lifting recall from 0.47 to 0.86 with precision holding. The tradeoff is two implementations of each shared rule to
+   keep in step; the parity test, run with the suite, is what keeps them honest.
 
 ## How It's Verified
 
@@ -114,8 +120,10 @@ assertion over the pipeline's own output.
 | Near-misses (issue-like but legitimate) correctly not flagged | 17 / 17 |
 | Detector P/R/F1 on a separately-written holdout (`make holdout`) | **0.85 / 0.47 / 0.61** |
 | — duplicate · unbundling · OON, on the holdout | 0.57/0.36 · 1.00/0.43 · 1.00/1.00 |
+| The three rules re-expressed in SQL, proven equal to the Python engine (`make sql`) | **flag-for-flag parity** — bidirectional `EXCEPT` empty on seed (34) and holdout (20) |
+| Holdout after two SQL gap-closers (DUP-02 date-drift, UNB-02 partial unbundling) | **0.91 / 0.86 / 0.89** — recall 0.47→0.86, precision held, no new false positives |
 | Explanation faithfulness — deterministic grounding + LLM-judge | **0.97** (33/34; the one miss was a judge error) |
-| Automated suite (offline; boundary + malformed-input tests included) | 53 tests |
+| Automated suite (offline; SQL parity + boundary + malformed-input tests included) | 61 tests |
 
 The holdout is where the detector's shape shows. It nails the textbook cases (exact-date duplicates, full-panel
 unbundling, and OON — all at 100%) and misses the real-world variants: **modifier-59 abuse** (a true duplicate stamped
@@ -140,8 +148,10 @@ the rules are not tuned on.
   decide, price, or pay a claim. No auto-clear, no auto-deny.
 - Synthetic, hand-labelled data only — no PHI, no real fee schedules, no payer policy library. The results show whether
   the rules behave as designed, not real-world performance on live claims.
-- Three narrow rules, with a **0.47 holdout recall**: modifier-59 abuse, date-drift duplicates, and partial/cross-date
-  unbundling are missed today, and are the stated fix direction.
+- Three rules whose Python holdout recall is **0.47**. The SQL rule set closes two of the three named gaps (date-drift
+  duplicates, partial unbundling), lifting holdout recall to **0.86** with precision holding; modifier-59 abuse, the
+  next-day tail of a cross-date split, and the bilateral (modifier 50) false positive remain and are the stated fix
+  direction. The gap-closers live in the SQL layer, so the Python `make holdout` still reports 0.47.
 - The dollars figure is an **estimate**, not recovered dollars — labelled *Identified*, split from *Confirmed*, with the
   assumptions surfaced on the dashboard.
 - The LLM only explains, and its explanations are scored for faithfulness against a judge that has its own error rate.

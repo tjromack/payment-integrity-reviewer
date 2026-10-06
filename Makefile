@@ -5,7 +5,7 @@
 # Override the interpreter with:  make run PY=.venv/Scripts/python
 PY ?= python
 
-.PHONY: install seed detect explain run eval holdout test reset fmt
+.PHONY: install seed detect explain run eval holdout sql sql-dump test reset fmt
 
 install:        ## install dependencies into the active interpreter
 	$(PY) -m pip install -r requirements.txt
@@ -27,6 +27,12 @@ eval:           ## detector P/R/F1 by issue type + explanation faithfulness (on 
 
 holdout:        ## detector P/R/F1 on a SEPARATELY-written holdout set (the honest number)
 	$(PY) -m app.holdout
+
+sql:            ## the rules in SQL: prove parity with Python, then the holdout gaps closed
+	$(PY) -m app.detect_sql
+
+sql-dump:       ## render the live SQL (reference data inlined) to sql/ for inspection
+	$(PY) -c "from app.detect_sql import write_sql_dump; print('wrote', write_sql_dump())"
 
 test:           ## run the test suite
 	$(PY) -m pytest

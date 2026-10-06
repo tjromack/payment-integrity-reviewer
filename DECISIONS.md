@@ -16,6 +16,56 @@ These are the script for "why did you build it this way?" Add an entry on every 
 
 ---
 
+## 018. Two recall gaps closed in SQL: date-drift (DUP-02) and partial unbundling (UNB-02) (2026-10-06)
+- Date / phase: A1 add-on (portfolio playbook v3)
+- Decision: Add two SQL-only rules that close the holdout misses named in EVAL.md/DECISIONS 015:
+  - **DUP-02 — date-drift duplicates:** the same member+provider+CPT on service dates exactly one day apart, later
+    submission, no distinct-service modifier. Implemented **twice** — a self-join and a `LAG` window — proven equal on
+    the seed and holdout (`dup02_implementations_agree`); the `LAG` form is canonical. Confidence 0.80 (strong, below an
+    exact same-day repeat's 0.85/0.95).
+  - **UNB-02 — partial unbundling:** ≥2 but fewer than all of a panel's components billed separately on one
+    member+provider+date, no distinct-service modifier. Confidence 0.75 (a partial split is weaker evidence than a whole
+    panel billed as components). Also catches the same-day portion of a cross-date split.
+  - Result on the holdout (`make sql`): overall recall **0.47 → 0.86**, precision **0.85 → 0.91** (duplicate 0.57/0.36 →
+    0.73/0.73; unbundling 1.00/0.43 → 1.00/0.91; OON unchanged). The false-positive count is unchanged (3) — recall was
+    bought with zero new wrong flags.
+- Alternatives considered: widen DUP-01 itself to a date *window* (couples the exact-date rule with a fuzzy one and
+  would break the DUP-01 parity check — kept DUP-02 as a separate, separately-scored rule); treat modifier 59 as
+  scrutiny-worthy here too (a modifier-*policy* change with its own precision risk — deliberately left open and documented).
+- Why: These are the two gaps the A1 add-on names, and both close cleanly without touching precision. Keeping each as a
+  new, separately-confidence-tiered rule preserves the parity of the original three and keeps every flag traceable.
+- Tradeoff accepted: The gap-closers live in the SQL layer (`app/detect_sql.py`), not in the Python engine, so `make
+  holdout` (Python) still reports 0.47 while `make sql` reports 0.86 — stated plainly in EVAL.md. Modifier-59 abuse, the
+  next-day tail of a cross-date split, and the bilateral (mod-50) false positive remain open and documented.
+- Revisit if: the gap-closers are promoted into the Python detector → port DUP-02/UNB-02 to `app/detect.py` and
+  regenerate the holdout so it still probes untuned cases.
+
+## 017. The rules, re-expressed in SQL, proven equal to the Python engine (2026-10-06)
+- Date / phase: A1 add-on (portfolio playbook v3)
+- Decision: Add `app/detect_sql.py` — DUP-01, UNB-01 and OON-01 as SQL over the same SQLite `claim` table — and a parity
+  harness (`make sql`) that proves the SQL equals `app/detect.py` flag-for-flag. The SQL is built from `app/reference.py`
+  (the distinct-service modifiers and the panel/component map), so the SQL and Python rules read one source of truth and
+  cannot drift. `make sql-dump` renders the live SQL to `sql/payment_integrity_rules.sql` for review.
+  - **Agreement = a bidirectional `EXCEPT`** on (`claim_line_id`, `rule_id`, `confidence`), empty both ways with equal
+    row counts. SQLite lacks `EXCEPT ALL`; because each rule emits one row per line, set-based `EXCEPT` both-ways-empty
+    plus equal counts is exactly `EXCEPT ALL`-both-ways-empty (tested: `test_one_flag_per_line_per_rule`).
+  - **OON NULL policy, made explicit:** a NULL `provider_network_status`/`paid_as_network` is *unknown* and never fires
+    OON-01 (`= 'out'`/`= 'in'` are NULL under three-valued logic). Missing network data is a data-quality exception to
+    surface upstream, not an accusation — matching the precision-first posture. The schema enforces NOT NULL today, so
+    the rule is written for the real feeds where NULLs occur (tested on a relaxed table).
+  - **Scoring in SQL** (`score_sql`) computes per-issue precision/recall/F1 by conditional aggregation and reproduces the
+    Python holdout numbers exactly for the three rules.
+- Alternatives considered: port the rules to a warehouse engine (DuckDB/Postgres) for `EXCEPT ALL` (adds a dependency /
+  a service for no gain over SQLite here — the data is already SQLite); hand-write the SQL with the modifier/panel lists
+  inlined (would duplicate `reference.py` and drift — generated from it instead); compare only which lines are flagged
+  (also compared `confidence`, so the translation is proven faithful on severity, not just on the yes/no).
+- Why: Payment-integrity edits are written and reviewed as SQL far more than as application code; a relational,
+  warehouse-portable expression — *proven* equal to the reference engine rather than merely plausible — is the evidence
+  that matters, and it feeds the SQL drill lab with a pinned answer key.
+- Tradeoff accepted: Two implementations of each of the three rules to keep in step; the parity check (run in CI via the
+  test suite) is what keeps them honest.
+- Revisit if: the Python engine's rule logic changes → update the SQL and the parity test in the same commit.
+
 ## 016. Hosted demo: a committed, pre-explained DB — keyless and offline (2026-09-23)
 - Decision: Host on Render from a committed, pre-explained fixture (`data/demo.db`, 34 flags with cached rationales,
   tracked via a `!data/demo.db` gitignore exception). `scripts/start.sh` copies it into place on boot; the running app
